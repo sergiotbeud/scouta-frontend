@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
 import { useAuthStore } from '../store/auth-store';
 import { Subscription } from '../ports/IApiClient';
+import { UserRole } from '../domain/entities/User';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
@@ -15,7 +16,7 @@ export function useMySubscription() {
 
   useEffect(() => {
     // ADMIN y EVALUATOR pueden ver la suscripción de su club
-    if (token && user && (user.role === 'ADMIN' || user.role === 'admin' || user.role === 'EVALUATOR' || user.role === 'evaluator')) {
+    if (token && user && (user.role === UserRole.ADMIN || user.role === UserRole.EVALUATOR)) {
       fetchSubscription();
     } else {
       setSubscription(null);

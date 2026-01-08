@@ -45,7 +45,7 @@ export default function EvaluatorsPage() {
   }, [mounted, isAuthenticated, router]);
 
   useEffect(() => {
-    if (mounted && user && user.role !== UserRole.ADMIN && user.role !== 'ADMIN') {
+    if (mounted && user && user.role !== UserRole.ADMIN) {
       router.push('/dashboard');
     }
   }, [mounted, user, router]);
