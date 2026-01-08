@@ -20,7 +20,7 @@ export function useEvaluations() {
   }, [token]);
 
   // Función helper para normalizar items que pueden venir con estructura {props: {...}}
-  const normalizeEvaluationItems = (items: any[]): any[] => {
+  const normalizeEvaluationItems = (items: any[] | undefined): any[] => {
     if (!items || !Array.isArray(items)) {
       return [];
     }
@@ -49,7 +49,7 @@ export function useEvaluations() {
         // Normalizar los items de todas las evaluaciones
         const normalizedEvaluations = response.data.map(evaluation => ({
           ...evaluation,
-          items: normalizeEvaluationItems(evaluation.items),
+          items: normalizeEvaluationItems(evaluation.items || []),
         }));
         setEvaluations(normalizedEvaluations);
       } else {
@@ -74,7 +74,7 @@ export function useEvaluations() {
         // Normalizar los items de todas las evaluaciones
         const normalizedEvaluations = response.data.map(evaluation => ({
           ...evaluation,
-          items: normalizeEvaluationItems(evaluation.items),
+          items: normalizeEvaluationItems(evaluation.items || []),
         }));
         setEvaluations(normalizedEvaluations);
         return normalizedEvaluations;
@@ -102,7 +102,7 @@ export function useEvaluations() {
         // Normalizar los items si vienen con estructura {props: {...}}
         const normalizedData = {
           ...response.data,
-          items: normalizeEvaluationItems(response.data.items),
+          items: normalizeEvaluationItems(response.data.items || []),
         };
         return normalizedData;
       } else {
@@ -151,7 +151,7 @@ export function useEvaluations() {
         // Normalizar los items si vienen con estructura {props: {...}}
         const normalizedData = {
           ...response.data,
-          items: normalizeEvaluationItems(response.data.items),
+          items: normalizeEvaluationItems(response.data.items || []),
         };
         // Actualizar en la lista local
         setEvaluations(prev => prev.map(e => e.id === id ? normalizedData : e));
