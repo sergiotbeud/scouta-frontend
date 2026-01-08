@@ -83,6 +83,8 @@ export function SuperAdminDashboard() {
       });
 
       if (response.success) {
+        // Reset form antes de cerrar el modal
+        e.currentTarget.reset();
         setShowCreateModal(false);
         setLogoFile(null);
         setLogoPreview(null);
@@ -91,8 +93,6 @@ export function SuperAdminDashboard() {
         if (selectedClub) {
           await fetchSubscription();
         }
-        // Reset form
-        e.currentTarget.reset();
       } else {
         alert(response.error || 'Error al crear club');
       }
