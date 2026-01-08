@@ -1,0 +1,132 @@
+# Scouta Frontend - Coding Rules
+
+## 🏗️ Arquitectura
+
+### Hexagonal Architecture (Adaptado para Frontend)
+- **Domain Layer**: Entidades y tipos del dominio
+- **Ports**: Interfaces que definen contratos (API Client, Store)
+- **Adapters**: Implementaciones concretas (Axios, Zustand)
+- **Use Cases**: Hooks personalizados que encapsulan lógica
+- **Components**: Componentes React puros y presentacionales
+
+### Estructura de Carpetas
+```
+app/              # Next.js App Router (páginas)
+components/       # Componentes React reutilizables
+domain/           # Entidades y tipos del dominio
+ports/            # Interfaces (contratos)
+adapters/         # Implementaciones (API, Store)
+use-cases/        # Custom hooks (lógica de negocio)
+store/            # Estado global (Zustand)
+```
+
+## 📝 TypeScript
+
+### Reglas Generales
+- **Strict Mode**: Siempre activado
+- **No `any`**: Usar tipos específicos o `unknown`
+- **Interfaces sobre Types**: Preferir interfaces para objetos
+- **Type Safety**: Tipar props, estados y funciones
+
+### Nomenclatura
+- **Componentes**: PascalCase (`LoginForm`, `PlayerCard`)
+- **Hooks**: camelCase con prefijo `use` (`useLogin`, `useAuth`)
+- **Funciones**: camelCase (`fetchUser`, `validateEmail`)
+- **Constantes**: UPPER_SNAKE_CASE (`API_URL`, `MAX_RETRIES`)
+- **Archivos**: kebab-case (`login-form.tsx`, `auth-store.ts`)
+
+## ⚛️ React
+
+### Componentes
+- **Functional Components**: Siempre usar funciones, no clases
+- **Props**: Tipar con interfaces o types
+- **Hooks**: Usar hooks personalizados para lógica compleja
+- **Memoización**: Usar `useMemo` y `useCallback` cuando sea necesario
+
+### Estado
+- **Local State**: `useState` para estado del componente
+- **Global State**: Zustand para estado compartido
+- **Server State**: Considerar React Query para datos del servidor
+
+## 🎨 Tailwind CSS
+
+### Reglas
+- **Utility First**: Preferir clases de Tailwind sobre CSS custom
+- **Dark Mode**: Usar `dark:` prefix para estilos oscuros
+- **Responsive**: Mobile-first approach
+- **Colores**: Usar colores del tema definidos en `tailwind.config.js`
+
+### Clases Comunes
+- **Containers**: `container mx-auto px-4`
+- **Cards**: `bg-dark-surface border border-dark-border rounded-lg p-6`
+- **Buttons**: `bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded`
+- **Inputs**: `bg-dark-elevated border border-dark-border text-white rounded px-4 py-2`
+
+## 📦 Next.js 14
+
+### App Router
+- **Pages**: Usar `app/` directory, no `pages/`
+- **Layouts**: Usar `layout.tsx` para layouts compartidos
+- **Loading**: Usar `loading.tsx` para estados de carga
+- **Error**: Usar `error.tsx` para manejo de errores
+
+### Data Fetching
+- **Server Components**: Por defecto, usar Server Components
+- **Client Components**: Marcar con `'use client'` cuando sea necesario
+- **API Routes**: Usar para endpoints internos si es necesario
+
+## 🔒 Seguridad
+
+### Validación
+- **Zod**: Para validación de formularios y datos
+- **React Hook Form**: Para manejo de formularios
+- **Validar en Frontend**: Pero nunca confiar solo en esto
+
+### Autenticación
+- **JWT**: Almacenar en localStorage o cookies httpOnly
+- **Protección de Rutas**: Middleware de Next.js
+- **Tokens**: Refrescar automáticamente cuando expire
+
+## 🧪 Testing
+
+### Pruebas
+- **Unit Tests**: Para funciones y hooks
+- **Component Tests**: Para componentes React
+- **E2E Tests**: Para flujos completos (opcional)
+
+## 📚 Código
+
+### Comentarios
+- **JSDoc**: Para funciones y componentes públicos
+- **Explicar "por qué"**: No "qué"
+- **Eliminar código comentado**
+
+### Formato
+- **Prettier**: Formateo automático
+- **ESLint**: Linting
+- **Consistencia**: Seguir el estilo del proyecto
+
+## 🚫 NO Hacer
+
+- ❌ No usar `any` en TypeScript
+- ❌ No hacer lógica de negocio en componentes
+- ❌ No acceder directamente a APIs desde componentes
+- ❌ No usar `console.log` en producción
+- ❌ No hardcodear valores (usar config/env)
+- ❌ No crear dependencias circulares
+- ❌ No usar clases de CSS custom sin necesidad
+
+## ✅ Sí Hacer
+
+- ✅ Usar TypeScript strict mode
+- ✅ Validar formularios con Zod
+- ✅ Manejar estados de carga y error
+- ✅ Usar componentes reutilizables
+- ✅ Seguir arquitectura hexagonal
+- ✅ Mantener componentes pequeños y enfocados
+- ✅ Usar nombres descriptivos
+- ✅ Documentar componentes complejos
+
+
+
+
