@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
 import { Club } from '../ports/IApiClient';
 import { useAuthStore } from '../store/auth-store';
+import { UserRole } from '../domain/entities/User';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
@@ -21,7 +22,7 @@ export function useMyClub() {
       }
 
       // Solo obtener club si el usuario no es SUPER_ADMIN
-      if (user.role === 'SUPER_ADMIN' || user.role === 'PLAYER') {
+      if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.PLAYER) {
         setIsLoading(false);
         return;
       }

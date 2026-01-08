@@ -86,7 +86,7 @@ export function AppHeader({
                   Dashboard
                 </Link>
                 {/* SUPER_ADMIN no puede ver jugadores ni evaluaciones */}
-                {user && user.role !== UserRole.SUPER_ADMIN && user.role !== 'SUPER_ADMIN' && (
+                {user && user.role !== UserRole.SUPER_ADMIN && (
                   <>
                     <Link
                       href="/players"
@@ -102,7 +102,7 @@ export function AppHeader({
                     </Link>
                   </>
                 )}
-                {user && (user.role === UserRole.ADMIN || user.role === 'ADMIN') && (
+                {user && user.role === UserRole.ADMIN && (
                   <Link
                     href="/evaluators"
                     className="px-3 xl:px-4 py-2 text-xs xl:text-sm text-dark-text-secondary hover:text-white hover:bg-dark-elevated rounded-lg transition-all duration-200"
@@ -179,7 +179,7 @@ export function AppHeader({
                     Dashboard
                   </Link>
                   {/* SUPER_ADMIN no puede ver jugadores ni evaluaciones */}
-                  {user && user.role !== UserRole.SUPER_ADMIN && user.role !== 'SUPER_ADMIN' && (
+                  {user && user.role !== UserRole.SUPER_ADMIN && (
                     <>
                       <Link
                         href="/players"
@@ -197,7 +197,7 @@ export function AppHeader({
                       </Link>
                     </>
                   )}
-                  {user && (user.role === UserRole.ADMIN || user.role === 'ADMIN') && (
+                  {user && user.role === UserRole.ADMIN && (
                     <Link
                       href="/evaluators"
                       onClick={() => setMobileMenuOpen(false)}

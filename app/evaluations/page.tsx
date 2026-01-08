@@ -47,7 +47,7 @@ export default function EvaluationsPage() {
   }, [mounted, isAuthenticated, router]);
 
   useEffect(() => {
-    if (mounted && user && (user.role === UserRole.SUPER_ADMIN || user.role === 'SUPER_ADMIN')) {
+    if (mounted && user && user.role === UserRole.SUPER_ADMIN) {
       router.push('/dashboard');
     }
   }, [mounted, user, router]);
