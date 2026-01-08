@@ -6,7 +6,7 @@ import dynamic from 'next/dynamic';
 import { AxiosApiClient } from '../../../adapters/api/AxiosApiClient';
 import { Evaluation } from '../../../domain/entities/Evaluation';
 import { Player } from '../../../domain/entities/Player';
-import { User } from '../../../domain/entities/User';
+import { User, UserRole } from '../../../domain/entities/User';
 import { SharedReportInfo, Club } from '../../../ports/IApiClient';
 import { useReports } from '../../../use-cases/useReports';
 
@@ -72,7 +72,12 @@ export default function SharedReportPage() {
           
           setEvaluation(normalizedEvaluation);
           setPlayer(response.data.player || null);
-          setEvaluator(response.data.evaluator || null);
+          // Normalizar evaluator: convertir role de string a UserRole enum
+          const evaluatorData = response.data.evaluator;
+          setEvaluator(evaluatorData ? {
+            ...evaluatorData,
+            role: evaluatorData.role as UserRole,
+          } : null);
           setClub(response.data.club || null);
           setSharedReport(response.data.sharedReport);
         } else {
