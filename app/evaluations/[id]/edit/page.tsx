@@ -11,20 +11,6 @@ import { AppHeader } from '../../../../components/AppHeader';
 import { SubscriptionBlockedBanner } from '../../../../components/SubscriptionBlockedBanner';
 import { Evaluation } from '../../../../domain/entities/Evaluation';
 import { useMySubscription } from '../../../../use-cases/useMySubscription';
-import { z } from 'zod';
-
-const evaluationSchema = z.object({
-  playerId: z.string().uuid(),
-  observations: z.string().optional().nullable(),
-  items: z.array(z.object({
-    category: z.string(),
-    itemName: z.string(),
-    value: z.number().min(1).max(5),
-    dataType: z.literal('scale_1_5'),
-  })),
-});
-
-type EvaluationFormData = z.infer<typeof evaluationSchema>;
 
 function EditEvaluationPageContent() {
   const user = useAuthStore((state) => state.user);
@@ -63,14 +49,14 @@ function EditEvaluationPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, isAuthenticated, evaluationId]);
 
-  const handleSubmit = async (data: EvaluationFormData) => {
+  const handleSubmit = async (data: { playerId: string; observations?: string | null; items: any[]; strengths?: string[]; weaknesses?: string[] }) => {
     if (!user || !evaluation) return;
 
     const result = await updateEvaluation(evaluationId, {
       observations: data.observations || null,
       items: data.items,
-      strengths: (data as any).strengths || [],
-      weaknesses: (data as any).weaknesses || [],
+      strengths: data.strengths || [],
+      weaknesses: data.weaknesses || [],
     });
 
     if (result) {

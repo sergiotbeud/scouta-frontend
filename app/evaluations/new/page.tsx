@@ -10,20 +10,6 @@ import { SubscriptionBlockedBanner } from '../../../components/SubscriptionBlock
 import Link from 'next/link';
 import { ScoutaLogo } from '../../../components/ScoutaLogo';
 import { useMySubscription } from '../../../use-cases/useMySubscription';
-import { z } from 'zod';
-
-const evaluationSchema = z.object({
-  playerId: z.string().uuid(),
-  observations: z.string().optional().nullable(),
-  items: z.array(z.object({
-    category: z.string(),
-    itemName: z.string(),
-    value: z.number().min(1).max(5),
-    dataType: z.literal('scale_1_5'),
-  })),
-});
-
-type EvaluationFormData = z.infer<typeof evaluationSchema>;
 
 function NewEvaluationPageContent() {
   const user = useAuthStore((state) => state.user);
@@ -62,7 +48,7 @@ function NewEvaluationPageContent() {
     }
   }, [searchParams]);
 
-  const handleSubmit = async (data: EvaluationFormData) => {
+  const handleSubmit = async (data: { playerId: string; observations?: string | null; items: any[]; strengths?: string[]; weaknesses?: string[] }) => {
     if (!user) return;
 
     const result = await createEvaluation({
@@ -70,8 +56,8 @@ function NewEvaluationPageContent() {
       evaluatorId: user.id,
       observations: data.observations || null,
       items: data.items,
-      strengths: (data as any).strengths || [],
-      weaknesses: (data as any).weaknesses || [],
+      strengths: data.strengths || [],
+      weaknesses: data.weaknesses || [],
     });
 
     if (result) {

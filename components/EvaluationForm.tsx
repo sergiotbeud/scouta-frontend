@@ -26,10 +26,16 @@ const evaluationSchema = z.object({
 
 type EvaluationFormData = z.infer<typeof evaluationSchema>;
 
+// Tipo extendido para onSubmit que incluye strengths y weaknesses como arrays
+type EvaluationSubmitData = Omit<EvaluationFormData, 'strengths' | 'weaknesses'> & {
+  strengths?: string[];
+  weaknesses?: string[];
+};
+
 interface EvaluationFormProps {
   playerId?: string;
   playerPositions?: string[];
-  onSubmit: (data: EvaluationFormData) => Promise<void>;
+  onSubmit: (data: EvaluationSubmitData) => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
   initialData?: Evaluation | null;
