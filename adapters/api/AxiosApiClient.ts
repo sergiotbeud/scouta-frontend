@@ -308,6 +308,7 @@ export class AxiosApiClient implements IApiClient {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
+          timeout: 60000, // 60 segundos para conversión HEIC
         }
       );
       return response.data;
