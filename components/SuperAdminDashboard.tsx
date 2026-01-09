@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useClubs } from '../use-cases/useClubs';
 import { useSubscription } from '../use-cases/useSubscriptions';
 import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
@@ -38,8 +38,12 @@ export function SuperAdminDashboard() {
   const handleCreateClub = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
+    
+    // Guardar referencia al formulario ANTES de cualquier async
+    const form = e.currentTarget;
+    
     try {
-      const formData = new FormData(e.currentTarget);
+      const formData = new FormData(form);
       const name = formData.get('name') as string;
       const adminEmail = formData.get('adminEmail') as string;
       const adminName = formData.get('adminName') as string;
@@ -83,11 +87,13 @@ export function SuperAdminDashboard() {
       });
 
       if (response.success) {
-        // Reset form antes de cerrar el modal
-        e.currentTarget.reset();
-        setShowCreateModal(false);
+        // Reset form ANTES de cerrar el modal y solo si el form aún existe
+        if (form && form.parentElement) {
+          form.reset();
+        }
         setLogoFile(null);
         setLogoPreview(null);
+        setShowCreateModal(false); // Cerrar modal DESPUÉS del reset
         await fetchClubs();
         // Si se seleccionó un club, refrescar la suscripción
         if (selectedClub) {
@@ -171,8 +177,12 @@ export function SuperAdminDashboard() {
     }
   };
 
-  const handleDeleteClub = async (clubId: string) => {
-    if (!confirm('¿Estás seguro de que deseas eliminar este club?')) {
+  const handleDeleteClub = async (clubId: string, hardDelete: boolean = false) => {
+    const message = hardDelete
+      ? '¿Estás seguro de que deseas ELIMINAR DEFINITIVAMENTE este club?\n\n⚠️ ADVERTENCIA: Esta acción NO se puede deshacer. Se eliminarán:\n- Todos los jugadores\n- Todas las evaluaciones\n- Todos los datos relacionados\n\n¿Continuar?'
+      : '¿Estás seguro de que deseas desactivar este club?\n\nEl club se desactivará pero los datos se conservarán.';
+
+    if (!confirm(message)) {
       return;
     }
 
@@ -181,12 +191,16 @@ export function SuperAdminDashboard() {
         apiClient.setToken(token);
       }
 
-      const response = await apiClient.deleteClub(clubId);
+      const response = await apiClient.deleteClub(clubId, hardDelete);
       if (response.success) {
         fetchClubs();
         if (selectedClub?.id === clubId) {
           setSelectedClub(null);
         }
+        alert(hardDelete 
+          ? 'Club eliminado definitivamente' 
+          : 'Club desactivado exitosamente'
+        );
       } else {
         alert(response.error || 'Error al eliminar club');
       }
@@ -326,6 +340,7 @@ export function SuperAdminDashboard() {
                             setShowEditModal(true);
                           }}
                           className="p-2 text-primary-400 hover:bg-primary-500/20 rounded-lg transition-colors"
+                          title="Editar club"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -334,9 +349,22 @@ export function SuperAdminDashboard() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteClub(club.id);
+                            handleDeleteClub(club.id, false);
+                          }}
+                          className="p-2 text-warning-light hover:bg-warning/20 rounded-lg transition-colors"
+                          title="Desactivar club (temporal)"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClub(club.id, true);
                           }}
                           className="p-2 text-error-light hover:bg-error/20 rounded-lg transition-colors"
+                          title="Eliminar definitivamente"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />

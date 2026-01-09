@@ -197,11 +197,11 @@ export default function EvaluationsPage() {
       <AppHeader title="Scouta" subtitle="Evaluaciones" showBackButton={true} backUrl="/dashboard" backLabel="Volver al Dashboard" />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         <SubscriptionBlockedBanner />
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
           <div className="flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 md:mb-0">
               {viewMode === 'latest' ? 'Últimas Evaluaciones por Jugador' : 'Todas las Evaluaciones'}
             </h1>
           </div>
@@ -230,10 +230,10 @@ export default function EvaluationsPage() {
         </div>
         
         {/* Botón Nueva Evaluación */}
-        <div className="mb-6">
+        <div className="mb-4 sm:mb-6">
           <Link
             href="/evaluations/new"
-            className={`inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-success text-white font-semibold rounded-xl transition-all duration-200 shadow-lg text-sm sm:text-base w-full sm:w-auto ${
+            className={`inline-flex items-center justify-center gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-gradient-success text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-200 shadow-lg text-xs sm:text-sm md:text-base w-full sm:w-auto ${
               !isSubscriptionActive 
                 ? 'opacity-50 cursor-not-allowed pointer-events-none' 
                 : 'hover:opacity-95 hover:shadow-xl hover:shadow-success/30'
@@ -248,8 +248,8 @@ export default function EvaluationsPage() {
         </div>
 
         {/* Filtros y Búsqueda */}
-        <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             {/* Buscador por nombre de jugador */}
             <div>
               <label className="block text-sm font-medium text-white mb-2">
@@ -396,16 +396,16 @@ export default function EvaluationsPage() {
                 return (
                   <div
                     key={evaluation.id}
-                    className="bg-gradient-to-br from-success/10 via-dark-surface/80 to-dark-surface/80 backdrop-blur-xl border border-success/20 rounded-3xl p-6 shadow-2xl hover:border-success/50 transition-all"
+                    className="bg-gradient-to-br from-success/10 via-dark-surface/80 to-dark-surface/80 backdrop-blur-xl border border-success/20 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl hover:border-success/50 transition-all"
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       {/* Foto del jugador */}
                       {player && player.photoUrl && (
                         <div className="flex-shrink-0">
                           <img
                             src={`${API_URL}${player.photoUrl}`}
                             alt={player.name}
-                            className="w-20 h-20 rounded-xl object-cover border-2 border-success/30 shadow-lg"
+                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border-2 border-success/30 shadow-lg"
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = 'none';
                             }}
@@ -421,33 +421,33 @@ export default function EvaluationsPage() {
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-xl font-bold text-white mb-1">
+                              <h3 className="text-lg sm:text-xl font-bold text-white mb-1 break-words">
                                 {getPlayerName(evaluation.playerId)}
                               </h3>
                               {club && (
-                                <p className="text-success/80 text-sm mb-1">
+                                <p className="text-success/80 text-xs sm:text-sm mb-1 truncate">
                                   {club.name}
                                 </p>
                               )}
-                              <p className="text-dark-text-secondary text-sm">
+                              <p className="text-dark-text-secondary text-xs sm:text-sm">
                                 {formatDate(evaluation.date)}
                               </p>
                             </div>
-                            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 sm:gap-4 ml-4">
+                            <div className="flex flex-col items-end gap-2 sm:gap-3 ml-2 sm:ml-4 flex-shrink-0">
                               <div className="text-right">
                                 {evaluation.generalScore !== null && evaluation.generalScore !== undefined && (
-                                  <div className="text-xl sm:text-2xl font-bold text-success mb-1">
+                                  <div className="text-lg sm:text-xl md:text-2xl font-bold text-success mb-1">
                                     {evaluation.generalScore.toFixed(1)} / 5.0
                                   </div>
                                 )}
-                                <div className="text-xs sm:text-sm text-dark-text-tertiary">
+                                <div className="text-xs text-dark-text-tertiary">
                                   {evaluation.items?.length || 0} items
                                 </div>
                               </div>
-                              <div className="flex gap-2 sm:gap-3">
+                              <div className="flex gap-2">
                                 <Link
                                   href={`/evaluations/${evaluation.id}/edit`}
-                                  className="px-3 sm:px-4 py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-xl font-semibold transition-all border border-primary-500/50 text-sm text-center"
+                                  className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-lg sm:rounded-xl font-semibold transition-all border border-primary-500/50 text-xs sm:text-sm text-center whitespace-nowrap"
                                   title="Editar evaluación"
                                   onClick={(e) => e.stopPropagation()}
                                 >
@@ -465,7 +465,7 @@ export default function EvaluationsPage() {
                                     }
                                   }}
                                   disabled={isLoading || !isSubscriptionActive}
-                                  className={`px-3 sm:px-4 py-2 rounded-xl font-semibold transition-all border text-sm ${
+                                  className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold transition-all border text-xs sm:text-sm whitespace-nowrap ${
                                     !isSubscriptionActive
                                       ? 'opacity-50 cursor-not-allowed bg-dark-elevated text-dark-text-tertiary border-dark-border'
                                       : 'bg-error/20 hover:bg-error/30 text-error-light border-error/30'

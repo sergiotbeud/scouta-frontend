@@ -2,7 +2,7 @@
 
 import { useAuthStore } from '../../../store/auth-store';
 import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { usePlayers } from '../../../use-cases/usePlayers';
 import { useEvaluations } from '../../../use-cases/useEvaluations';
 import Link from 'next/link';
@@ -28,6 +28,7 @@ export default function PlayerDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const { fetchPlayerEvaluations } = useEvaluations();
   const playerId = params.id as string;
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -41,8 +42,11 @@ export default function PlayerDetailPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      // Evitar múltiples cargas
+      if (hasLoadedRef.current) return;
       if (!mounted || !isAuthenticated || !playerId) return;
       
+      hasLoadedRef.current = true; // Marcar como cargado
       setIsLoading(true);
       setError(null);
       
@@ -63,19 +67,28 @@ export default function PlayerDetailPage() {
           }
         } else {
           setError(playerResponse.error || 'Error al cargar jugador');
+          hasLoadedRef.current = false; // Permitir reintento si falla
         }
       } catch (err: any) {
         setError(err.message || 'Error al cargar datos');
+        hasLoadedRef.current = false; // Permitir reintento si falla
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (mounted && isAuthenticated) {
+    if (mounted && isAuthenticated && playerId) {
       fetchData();
     }
+    
+    // Resetear el flag cuando cambia el playerId
+    return () => {
+      if (playerId) {
+        hasLoadedRef.current = false;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, isAuthenticated, playerId, token]);
+  }, [mounted, isAuthenticated, playerId]);
 
   if (!mounted || !isAuthenticated || !user) {
     return (

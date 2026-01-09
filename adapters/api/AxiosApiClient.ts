@@ -602,9 +602,11 @@ export class AxiosApiClient implements IApiClient {
     }
   }
 
-  async deleteClub(id: string): Promise<ApiResponse<void>> {
+  async deleteClub(id: string, hardDelete: boolean = false): Promise<ApiResponse<void>> {
     try {
-      const response = await this.client.delete<ApiResponse<void>>(`/api/clubs/${id}`);
+      const response = await this.client.delete<ApiResponse<void>>(
+        `/api/clubs/${id}${hardDelete ? '?hardDelete=true' : ''}`
+      );
       return response.data;
     } catch (error: any) {
       if (error.response) {

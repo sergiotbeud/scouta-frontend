@@ -64,10 +64,10 @@ export default function DashboardPage() {
       <AppHeader title="Scouta" subtitle="Dashboard" />
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8 max-w-6xl">
+      <main className="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-6xl">
         {/* Welcome Section */}
-        <div className="mb-10">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-3">
+        <div className="mb-6 sm:mb-8 md:mb-10">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 md:gap-6 mb-3">
             {/* Logo del Club y Foto del Usuario */}
             <div className="flex items-center gap-4">
               {/* Logo del Club */}
@@ -119,18 +119,18 @@ export default function DashboardPage() {
               )}
             </div>
             
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-1 h-8 bg-gradient-primary rounded-full"></div>
-                <div>
-                  <h2 className="text-3xl sm:text-4xl font-bold text-white mb-1.5">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                <div className="w-1 h-6 sm:h-8 bg-gradient-primary rounded-full flex-shrink-0"></div>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-1 sm:mb-1.5 break-words">
                     Bienvenido, {user.name}
                   </h2>
-                  <p className="text-dark-text-secondary font-light">
+                  <p className="text-dark-text-secondary font-light text-xs sm:text-sm truncate">
                     {user.email}
                   </p>
                   {club && !clubLoading && (
-                    <p className="text-primary-400 font-medium text-sm mt-1">
+                    <p className="text-primary-400 font-medium text-xs sm:text-sm mt-1 truncate">
                       {club.name}
                     </p>
                   )}
@@ -141,19 +141,19 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link href="/players" className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl hover:border-primary-500/50 transition-all duration-200 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-primary-500/20 flex items-center justify-center group-hover:bg-primary-500/30 transition-colors">
-                <svg className="w-6 h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 sm:mb-8">
+          <Link href="/players" className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xl hover:border-primary-500/50 transition-all duration-200 group">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary-500/20 flex items-center justify-center group-hover:bg-primary-500/30 transition-colors">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
               {statsLoading ? '...' : stats?.totalPlayers || 0}
             </div>
-            <div className="text-sm text-dark-text-secondary">Total Jugadores</div>
+            <div className="text-xs sm:text-sm text-dark-text-secondary">Total Jugadores</div>
             {stats && stats.activePlayers !== stats.totalPlayers && (
               <div className="text-xs text-dark-text-tertiary mt-1">
                 {stats.activePlayers} activos
@@ -161,18 +161,18 @@ export default function DashboardPage() {
             )}
           </Link>
 
-          <Link href="/evaluations" className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl hover:border-success/50 transition-all duration-200 group">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-success/20 flex items-center justify-center group-hover:bg-success/30 transition-colors">
-                <svg className="w-6 h-6 text-success-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Link href="/evaluations" className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xl hover:border-success/50 transition-all duration-200 group">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-success/20 flex items-center justify-center group-hover:bg-success/30 transition-colors">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-success-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
               {statsLoading ? '...' : stats?.totalEvaluations || 0}
             </div>
-            <div className="text-sm text-dark-text-secondary">Evaluaciones Totales</div>
+            <div className="text-xs sm:text-sm text-dark-text-secondary">Evaluaciones Totales</div>
             {stats && stats.evaluationsThisMonth > 0 && (
               <div className="text-xs text-success mt-1">
                 {stats.evaluationsThisMonth} este mes
@@ -180,18 +180,18 @@ export default function DashboardPage() {
             )}
           </Link>
 
-          <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-warning/20 flex items-center justify-center">
-                <svg className="w-6 h-6 text-warning-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-warning/20 flex items-center justify-center">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-warning-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
               {statsLoading ? '...' : stats?.evaluatedPlayers || 0}
             </div>
-            <div className="text-sm text-dark-text-secondary">Jugadores Evaluados</div>
+            <div className="text-xs sm:text-sm text-dark-text-secondary">Jugadores Evaluados</div>
             {stats && stats.totalPlayers > 0 && (
               <div className="text-xs text-dark-text-tertiary mt-1">
                 {stats.totalPlayers - stats.evaluatedPlayers} sin evaluar
@@ -199,18 +199,18 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-info/20 flex items-center justify-center">
-                <svg className="w-6 h-6 text-info-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-info/20 flex items-center justify-center">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-info-light" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
             </div>
-            <div className="text-3xl font-bold text-white mb-1">
+            <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
               {statsLoading ? '...' : stats?.evaluationsThisMonth || 0}
             </div>
-            <div className="text-sm text-dark-text-secondary">Evaluaciones Este Mes</div>
+            <div className="text-xs sm:text-sm text-dark-text-secondary">Evaluaciones Este Mes</div>
           </div>
         </div>
 

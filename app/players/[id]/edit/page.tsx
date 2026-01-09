@@ -2,7 +2,7 @@
 
 import { useAuthStore } from '../../../../store/auth-store';
 import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -47,6 +47,7 @@ export default function EditPlayerPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const playerId = params.id as string;
+  const hasLoadedRef = useRef(false);
 
   const {
     register,
@@ -85,13 +86,18 @@ export default function EditPlayerPage() {
   // Cargar datos del jugador
   useEffect(() => {
     const fetchPlayer = async () => {
+      // Evitar múltiples cargas
+      if (hasLoadedRef.current) return;
       if (!mounted || !isAuthenticated || !playerId) return;
       
+      hasLoadedRef.current = true; // Marcar como cargado
       setIsLoadingPlayer(true);
+      
       try {
         if (token) {
           apiClient.setToken(token);
         }
+        
         const response = await apiClient.getPlayerById(playerId);
         if (response.success && response.data) {
           const playerData = response.data;
@@ -115,18 +121,29 @@ export default function EditPlayerPage() {
           if (playerData.photoUrl) {
             setPhotoPreview(`${API_URL}${playerData.photoUrl}`);
           }
+        } else {
+          hasLoadedRef.current = false; // Permitir reintento si falla
         }
       } catch (err: any) {
         console.error('Error al cargar jugador:', err);
+        hasLoadedRef.current = false; // Permitir reintento si falla
       } finally {
         setIsLoadingPlayer(false);
       }
     };
 
-    if (mounted && isAuthenticated) {
+    if (mounted && isAuthenticated && playerId) {
       fetchPlayer();
     }
-  }, [mounted, isAuthenticated, playerId, token, setValue]);
+    
+    // Resetear el flag cuando cambia el playerId
+    return () => {
+      if (playerId) {
+        hasLoadedRef.current = false;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, isAuthenticated, playerId]);
 
   // Limpiar object URL cuando el componente se desmonte o cambie la foto
   useEffect(() => {
