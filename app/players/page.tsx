@@ -11,6 +11,7 @@ import { SubscriptionBlockedBanner } from '../../components/SubscriptionBlockedB
 import { GetPlayersFilters } from '../../ports/IApiClient';
 import { UserRole } from '../../domain/entities/User';
 import { useMySubscription } from '../../use-cases/useMySubscription';
+import { getImageUrl } from '../../utils/imageUtils';
 
 export default function PlayersPage() {
   const user = useAuthStore((state) => state.user);
@@ -219,7 +220,7 @@ export default function PlayersPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {player.photoUrl ? (
                           <img
-                            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${player.photoUrl}`}
+                            src={getImageUrl(player.photoUrl) || ''}
                             alt={player.name}
                             className="w-12 h-12 rounded-xl object-cover border-2 border-dark-border"
                             onError={(e) => {
@@ -301,7 +302,7 @@ export default function PlayersPage() {
                   <div className="flex items-center gap-4 mb-4">
                     {player.photoUrl ? (
                       <img
-                        src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${player.photoUrl}`}
+                        src={getImageUrl(player.photoUrl) || ''}
                         alt={player.name}
                         className="w-16 h-16 rounded-xl object-cover border-2 border-dark-border flex-shrink-0"
                         onError={(e) => {

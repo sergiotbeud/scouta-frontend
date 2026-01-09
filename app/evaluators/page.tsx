@@ -12,6 +12,7 @@ import { UserRole } from '../../domain/entities/User';
 import Link from 'next/link';
 import { AxiosApiClient } from '../../adapters/api/AxiosApiClient';
 import { useMySubscription } from '../../use-cases/useMySubscription';
+import { getImageUrl } from '../../utils/imageUtils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
@@ -263,9 +264,7 @@ export default function EvaluatorsPage() {
                 <div className="flex items-start gap-4 mb-4">
                   {evaluator.photoUrl ? (
                     <img
-                      src={evaluator.photoUrl.startsWith('/') 
-                        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${evaluator.photoUrl}`
-                        : evaluator.photoUrl}
+                      src={getImageUrl(evaluator.photoUrl) || ''}
                       alt={evaluator.name}
                       className="w-16 h-16 rounded-full object-cover border-2 border-primary-500/50"
                       onError={(e) => {

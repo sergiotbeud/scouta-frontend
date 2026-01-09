@@ -17,6 +17,7 @@ import { Player } from '../../domain/entities/Player';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
+import { getImageUrl } from '../../utils/imageUtils';
 
 export default function EvaluationsPage() {
   const user = useAuthStore((state) => state.user);
@@ -403,7 +404,7 @@ export default function EvaluationsPage() {
                       {player && player.photoUrl && (
                         <div className="flex-shrink-0">
                           <img
-                            src={`${API_URL}${player.photoUrl}`}
+                            src={getImageUrl(player.photoUrl) || ''}
                             alt={player.name}
                             className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border-2 border-success/30 shadow-lg"
                             onError={(e) => {

@@ -11,6 +11,7 @@ import { useAuthStore as useAuth } from '../../../store/auth-store';
 import { Player } from '../../../domain/entities/Player';
 import { Evaluation } from '../../../domain/entities/Evaluation';
 import { AppHeader } from '../../../components/AppHeader';
+import { getImageUrl } from '../../../utils/imageUtils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
@@ -153,7 +154,7 @@ export default function PlayerDetailPage() {
           <div className="flex items-center gap-3 sm:gap-4 md:gap-6 mb-3">
             {player.photoUrl ? (
               <img
-                src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${player.photoUrl}`}
+                src={getImageUrl(player.photoUrl) || ''}
                 alt={player.name}
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-xl sm:rounded-2xl object-cover border-2 border-dark-border shadow-lg flex-shrink-0"
                 onError={(e) => {

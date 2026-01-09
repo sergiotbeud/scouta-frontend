@@ -11,6 +11,7 @@ import { AppHeader } from '../../components/AppHeader';
 import dynamic from 'next/dynamic';
 import { UserRole } from '../../domain/entities/User';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { getImageUrl } from '../../utils/imageUtils';
 
 // Importación dinámica para evitar problemas de SSR
 const SuperAdminDashboard = dynamic(
@@ -75,9 +76,7 @@ export default function DashboardPage() {
                 <div className="flex-shrink-0">
                   {club.logoUrl ? (
                     <img
-                      src={club.logoUrl.startsWith('/') 
-                        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${club.logoUrl}`
-                        : club.logoUrl}
+                      src={getImageUrl(club.logoUrl) || ''}
                       alt={`${club.name} logo`}
                       className="w-16 h-16 rounded-xl object-cover border-2 border-dark-border shadow-lg"
                       onError={(e) => {
@@ -99,9 +98,7 @@ export default function DashboardPage() {
                 <div className="flex-shrink-0">
                   {user.photoUrl ? (
                     <img
-                      src={user.photoUrl.startsWith('/') 
-                        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${user.photoUrl}`
-                        : user.photoUrl}
+                      src={getImageUrl(user.photoUrl) || ''}
                       alt={user.name}
                       className="w-16 h-16 rounded-full object-cover border-2 border-primary-500/50 shadow-lg"
                       onError={(e) => {

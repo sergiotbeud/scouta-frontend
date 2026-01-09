@@ -14,6 +14,7 @@ import { getCategoryAverages, prepareRadarChartData, calculateCategoryAverage, c
 import { SharedReport, Club } from '../../../ports/IApiClient';
 import { Player } from '../../../domain/entities/Player';
 import { AxiosApiClient } from '../../../adapters/api/AxiosApiClient';
+import { getImageUrl } from '../../../utils/imageUtils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
@@ -217,7 +218,7 @@ export default function EvaluationDetailPage() {
               <div className="flex-shrink-0">
                 <div className="relative">
                   <img
-                    src={`${API_URL}${player.photoUrl}`}
+                    src={getImageUrl(player.photoUrl) || ''}
                     alt={player.name}
                     className="w-32 h-32 rounded-2xl object-cover border-4 border-success/30 shadow-lg"
                     onError={(e) => {

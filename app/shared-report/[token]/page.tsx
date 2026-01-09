@@ -13,6 +13,7 @@ import { useReports } from '../../../use-cases/useReports';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
 import { getCategoryAverages, prepareRadarChartData } from '../../../utils/evaluationUtils';
+import { getImageUrl } from '../../../utils/imageUtils';
 
 // Importación dinámica para evitar problemas de SSR con recharts
 const EvaluationRadarChart = dynamic(
@@ -176,7 +177,7 @@ export default function SharedReportPage() {
               <div className="flex-shrink-0">
                 <div className="relative">
                   <img
-                    src={`${API_URL}${player.photoUrl}`}
+                    src={getImageUrl(player.photoUrl) || ''}
                     alt={player.name}
                     className="w-32 h-32 rounded-2xl object-cover border-4 border-success/30 shadow-lg"
                     onError={(e) => {
