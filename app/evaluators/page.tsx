@@ -490,9 +490,7 @@ export default function EvaluatorsPage() {
                         <span className="text-dark-text-secondary text-xs text-center p-2">HEIC (se convertirá)</span>
                       ) : selectedEvaluator.photoUrl ? (
                         <img
-                          src={selectedEvaluator.photoUrl.startsWith('/') 
-                            ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${selectedEvaluator.photoUrl}`
-                            : selectedEvaluator.photoUrl}
+                          src={getImageUrl(selectedEvaluator.photoUrl) || ''}
                           alt="Foto actual"
                           className="w-full h-full object-cover"
                           onError={(e) => {

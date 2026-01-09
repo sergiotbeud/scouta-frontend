@@ -7,6 +7,7 @@ import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
 import { useAuthStore } from '../store/auth-store';
 import { Club, Subscription, CreateSubscriptionRequest } from '../ports/IApiClient';
 import { UserRole } from '../domain/entities/User';
+import { getImageUrl } from '../utils/imageUtils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
@@ -304,9 +305,7 @@ export function SuperAdminDashboard() {
                         {/* Logo del club */}
                         {club.logoUrl ? (
                           <img
-                            src={club.logoUrl.startsWith('/') 
-                              ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${club.logoUrl}`
-                              : club.logoUrl}
+                            src={getImageUrl(club.logoUrl) || ''}
                             alt={`${club.name} logo`}
                             className="w-12 h-12 rounded-lg object-cover border border-dark-border/50"
                             onError={(e) => {
@@ -730,7 +729,7 @@ function ClubModal({
             {displayPreview && displayPreview !== 'heic-placeholder' && (
               <div className="mb-3">
                 <img
-                  src={displayPreview.startsWith('/') ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}${displayPreview}` : displayPreview}
+                  src={getImageUrl(displayPreview) || ''}
                   alt="Logo preview"
                   className="w-32 h-32 object-cover rounded-xl border border-dark-border/50"
                 />
