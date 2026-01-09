@@ -2,7 +2,7 @@
 
 import { useAuthStore } from '../../../store/auth-store';
 import { useRouter, useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useEvaluations } from '../../../use-cases/useEvaluations';
 import { usePlayers } from '../../../use-cases/usePlayers';
 import { useReports } from '../../../use-cases/useReports';
@@ -41,6 +41,7 @@ export default function EvaluationDetailPage() {
   const { generatePDF, createSharedLink, isLoading: isReportLoading, error: reportError } = useReports();
   const evaluationId = params.id as string;
   const token = useAuthStore((state) => state.token);
+  const hasLoadedRef = useRef(false);
 
   useEffect(() => {
     setMounted(true);
@@ -54,8 +55,17 @@ export default function EvaluationDetailPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      if (mounted && isAuthenticated && evaluationId && token) {
-        apiClient.setToken(token);
+      // Evitar múltiples cargas
+      if (hasLoadedRef.current) return;
+      if (!mounted || !isAuthenticated || !evaluationId) return;
+      
+      hasLoadedRef.current = true; // Marcar como cargado
+      
+      try {
+        if (token) {
+          apiClient.setToken(token);
+        }
+        
         await fetchPlayers();
         const evalData = await fetchEvaluationById(evaluationId);
         if (evalData) {
@@ -79,6 +89,7 @@ export default function EvaluationDetailPage() {
             }
           } catch (error) {
             console.error('Error al cargar jugador:', error);
+            hasLoadedRef.current = false; // Permitir reintento si falla
           }
           
           const playerEvaluations = await fetchPlayerEvaluations(evalData.playerId);
@@ -91,12 +102,27 @@ export default function EvaluationDetailPage() {
               setPreviousEvaluation(sortedEvaluations[0]);
             }
           }
+        } else {
+          hasLoadedRef.current = false; // Permitir reintento si falla
         }
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+        hasLoadedRef.current = false; // Permitir reintento si falla
       }
     };
-    loadData();
+
+    if (mounted && isAuthenticated && evaluationId) {
+      loadData();
+    }
+    
+    // Resetear el flag cuando cambia el evaluationId
+    return () => {
+      if (evaluationId) {
+        hasLoadedRef.current = false;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, isAuthenticated, evaluationId, token]);
+  }, [mounted, isAuthenticated, evaluationId]);
 
   const getPlayerName = (playerId: string) => {
     const player = players.find(p => p.id === playerId);
