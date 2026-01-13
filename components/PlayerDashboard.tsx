@@ -196,7 +196,10 @@ export function PlayerDashboard({ stats, statsLoading, statsError, user, club, c
                         color: '#fff'
                       }}
                       labelFormatter={(value) => formatDate(value)}
-                      formatter={(value: number) => [`${value.toFixed(1)} / 5.0`, 'Puntuación']}
+                      formatter={(value: number | undefined) => {
+                        if (value === undefined) return ['N/A', 'Puntuación'];
+                        return [`${value.toFixed(1)} / 5.0`, 'Puntuación'];
+                      }}
                     />
                     <Line 
                       type="monotone" 
@@ -243,7 +246,10 @@ export function PlayerDashboard({ stats, statsLoading, statsError, user, club, c
                         borderRadius: '8px',
                         color: '#fff'
                       }}
-                      formatter={(value: number) => [`${value.toFixed(1)} / 5.0`, 'Promedio']}
+                      formatter={(value: number | undefined) => {
+                        if (value === undefined) return ['N/A', 'Promedio'];
+                        return [`${value.toFixed(1)} / 5.0`, 'Promedio'];
+                      }}
                     />
                     <Bar dataKey="average" fill="#3B82F6" radius={[8, 8, 0, 0]} />
                   </BarChart>
