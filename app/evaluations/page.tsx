@@ -36,6 +36,8 @@ export default function EvaluationsPage() {
   const [playersData, setPlayersData] = useState<Map<string, Player>>(new Map());
   const [clubsData, setClubsData] = useState<Map<string, Club>>(new Map());
   const token = useAuthStore((state) => state.token);
+  const isPlayer = user?.role === UserRole.PLAYER;
+  const [playerId, setPlayerId] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -54,13 +56,39 @@ export default function EvaluationsPage() {
   }, [mounted, user, router]);
 
   useEffect(() => {
+    const fetchPlayerId = async () => {
+      if (isPlayer && user?.id && token) {
+        try {
+          apiClient.setToken(token);
+          const playersResponse = await apiClient.getPlayers();
+          if (playersResponse.success && playersResponse.data) {
+            const player = playersResponse.data.find(p => p.userId === user.id);
+            if (player) {
+              setPlayerId(player.id);
+            }
+          }
+        } catch (error) {
+          console.error('Error al obtener playerId:', error);
+        }
+      }
+    };
+    if (mounted && isPlayer) {
+      fetchPlayerId();
+    }
+  }, [mounted, isPlayer, user?.id, token]);
+
+  useEffect(() => {
     if (mounted && isAuthenticated && token) {
       apiClient.setToken(token);
-      fetchPlayers();
-      fetchEvaluations(filters);
+      if (isPlayer && playerId) {
+        fetchEvaluations({ playerId });
+      } else if (!isPlayer) {
+        fetchPlayers();
+        fetchEvaluations(filters);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, isAuthenticated, filters, token]);
+  }, [mounted, isAuthenticated, filters, token, isPlayer, playerId]);
 
   // Cargar datos completos de jugadores y clubes
   useEffect(() => {
@@ -118,8 +146,13 @@ export default function EvaluationsPage() {
     setFilters(newFilters);
   }, [selectedPlayerId, selectedEvaluatorId]);
 
-  const getPlayerName = (playerId: string) => {
-    const player = playersData.get(playerId) || players.find(p => p.id === playerId);
+  const getPlayerName = (evaluation: Evaluation) => {
+    // Primero intentar usar el jugador que viene en la evaluación
+    if (evaluation.player?.name) {
+      return evaluation.player.name;
+    }
+    // Fallback: buscar en la lista de jugadores cargados
+    const player = playersData.get(evaluation.playerId) || players.find(p => p.id === evaluation.playerId);
     return player?.name || 'Jugador desconocido';
   };
 
@@ -145,6 +178,42 @@ export default function EvaluationsPage() {
     });
   };
 
+  // Nueva función para formato corto de fecha (título para PLAYER) - empieza con mes completo
+  const formatDateTitle = (dateString: string) => {
+    const date = new Date(dateString);
+    const month = date.toLocaleDateString('es-ES', { month: 'long' });
+    const day = date.getDate();
+    const currentYear = new Date().getFullYear();
+    const year = date.getFullYear();
+    
+    // Si es del año actual, no mostrar el año
+    if (year === currentYear) {
+      return `${month} ${day}`;
+    }
+    return `${month} ${day}, ${year}`;
+  };
+
+  const formatDateShort = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const getEvaluatorName = (evaluation: Evaluation) => {
+    // Si la evaluación incluye información del evaluador, usarla
+    if (evaluation.evaluator?.name) {
+      return evaluation.evaluator.name;
+    }
+    // Si el evaluador es el usuario actual, mostrar su nombre
+    if (evaluation.evaluatorId === user?.id) {
+      return user.name || user.email;
+    }
+    // Fallback: mostrar un texto genérico
+    return 'Evaluador';
+  };
+
   // Filtrar y agrupar evaluaciones
   const processedEvaluations = useMemo(() => {
     let filtered = [...evaluations];
@@ -153,7 +222,7 @@ export default function EvaluationsPage() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(evaluation => {
-        const playerName = getPlayerName(evaluation.playerId).toLowerCase();
+        const playerName = getPlayerName(evaluation).toLowerCase();
         return playerName.includes(query);
       });
     }
@@ -199,57 +268,66 @@ export default function EvaluationsPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-        <SubscriptionBlockedBanner />
+        {!isPlayer && <SubscriptionBlockedBanner />}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 md:mb-8">
           <div className="flex-1">
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 sm:mb-3 md:mb-0">
-              {viewMode === 'latest' ? 'Últimas Evaluaciones por Jugador' : 'Todas las Evaluaciones'}
+              {isPlayer 
+                ? 'Mis Evaluaciones' 
+                : viewMode === 'latest' 
+                  ? 'Últimas Evaluaciones por Jugador' 
+                  : 'Todas las Evaluaciones'}
             </h1>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => setViewMode('latest')}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-xl font-semibold transition-all text-sm ${
-                viewMode === 'latest'
-                  ? 'bg-success text-white'
-                  : 'bg-dark-elevated text-dark-text-secondary hover:bg-dark-hover'
-              }`}
-            >
-              Últimas
-            </button>
-            <button
-              onClick={() => setViewMode('all')}
-              className={`flex-1 sm:flex-none px-4 py-2 rounded-xl font-semibold transition-all text-sm ${
-                viewMode === 'all'
-                  ? 'bg-success text-white'
-                  : 'bg-dark-elevated text-dark-text-secondary hover:bg-dark-hover'
-              }`}
-            >
-              Todas
-            </button>
-          </div>
+          {!isPlayer && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setViewMode('latest')}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-xl font-semibold transition-all text-sm ${
+                  viewMode === 'latest'
+                    ? 'bg-success text-white'
+                    : 'bg-dark-elevated text-dark-text-secondary hover:bg-dark-hover'
+                }`}
+              >
+                Últimas
+              </button>
+              <button
+                onClick={() => setViewMode('all')}
+                className={`flex-1 sm:flex-none px-4 py-2 rounded-xl font-semibold transition-all text-sm ${
+                  viewMode === 'all'
+                    ? 'bg-success text-white'
+                    : 'bg-dark-elevated text-dark-text-secondary hover:bg-dark-hover'
+                }`}
+              >
+                Todas
+              </button>
+            </div>
+          )}
         </div>
         
-        {/* Botón Nueva Evaluación */}
-        <div className="mb-4 sm:mb-6">
-          <Link
-            href="/evaluations/new"
-            className={`inline-flex items-center justify-center gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-gradient-success text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-200 shadow-lg text-xs sm:text-sm md:text-base w-full sm:w-auto ${
-              !isSubscriptionActive 
-                ? 'opacity-50 cursor-not-allowed pointer-events-none' 
-                : 'hover:opacity-95 hover:shadow-xl hover:shadow-success/30'
-            }`}
-            title={!isSubscriptionActive ? 'Suscripción inactiva' : ''}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nueva Evaluación
-          </Link>
-        </div>
+        {/* Botón Nueva Evaluación - Solo para ADMIN y EVALUATOR */}
+        {!isPlayer && (
+          <div className="mb-4 sm:mb-6">
+            <Link
+              href="/evaluations/new"
+              className={`inline-flex items-center justify-center gap-2 px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 bg-gradient-success text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-200 shadow-lg text-xs sm:text-sm md:text-base w-full sm:w-auto ${
+                !isSubscriptionActive 
+                  ? 'opacity-50 cursor-not-allowed pointer-events-none' 
+                  : 'hover:opacity-95 hover:shadow-xl hover:shadow-success/30'
+              }`}
+              title={!isSubscriptionActive ? 'Suscripción inactiva' : ''}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Nueva Evaluación
+            </Link>
+          </div>
+        )}
 
-        {/* Filtros y Búsqueda */}
-        <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl mb-4 sm:mb-6">
+        {/* Filtros y Búsqueda - Solo para ADMIN y EVALUATOR */}
+        {!isPlayer && (
+          <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl mb-4 sm:mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
             {/* Buscador por nombre de jugador */}
             <div>
@@ -342,7 +420,8 @@ export default function EvaluationsPage() {
               </button>
             </div>
           )}
-        </div>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -362,11 +441,13 @@ export default function EvaluationsPage() {
         {!isLoading && processedEvaluations.length === 0 && (
           <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-12 text-center">
             <p className="text-dark-text-secondary mb-4">
-              {searchQuery || selectedPlayerId || selectedEvaluatorId
-                ? 'No se encontraron evaluaciones con los filtros aplicados'
-                : 'No hay evaluaciones registradas'}
+              {isPlayer
+                ? 'No tienes evaluaciones registradas'
+                : searchQuery || selectedPlayerId || selectedEvaluatorId
+                  ? 'No se encontraron evaluaciones con los filtros aplicados'
+                  : 'No hay evaluaciones registradas'}
             </p>
-            {(!searchQuery && !selectedPlayerId && !selectedEvaluatorId) && (
+            {!isPlayer && (!searchQuery && !selectedPlayerId && !selectedEvaluatorId) && (
               <Link
                 href="/evaluations/new"
                 className="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-success hover:opacity-95 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:shadow-success/30 text-sm sm:text-base"
@@ -422,17 +503,37 @@ export default function EvaluationsPage() {
                         >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-lg sm:text-xl font-bold text-white mb-1 break-words">
-                                {getPlayerName(evaluation.playerId)}
-                              </h3>
-                              {club && (
-                                <p className="text-success/80 text-xs sm:text-sm mb-1 truncate">
-                                  {club.name}
-                                </p>
+                              {isPlayer ? (
+                                // Para PLAYER: Fecha grande como título principal
+                                <>
+                                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2 break-words">
+                                    {formatDateTitle(evaluation.date)}
+                                  </h3>
+                                  {club && (
+                                    <p className="text-success/80 text-sm mb-1 truncate">
+                                      {club.name}
+                                    </p>
+                                  )}
+                                  <p className="text-dark-text-secondary text-xs sm:text-sm">
+                                    Evaluado por: {getEvaluatorName(evaluation)}
+                                  </p>
+                                </>
+                              ) : (
+                                // Para ADMIN/EVALUATOR: Nombre del jugador como título
+                                <>
+                                  <h3 className="text-lg sm:text-xl font-bold text-white mb-1 break-words">
+                                    {getPlayerName(evaluation)}
+                                  </h3>
+                                  {club && (
+                                    <p className="text-success/80 text-xs sm:text-sm mb-1 truncate">
+                                      {club.name}
+                                    </p>
+                                  )}
+                                  <p className="text-dark-text-secondary text-xs sm:text-sm">
+                                    {formatDate(evaluation.date)}
+                                  </p>
+                                </>
                               )}
-                              <p className="text-dark-text-secondary text-xs sm:text-sm">
-                                {formatDate(evaluation.date)}
-                              </p>
                             </div>
                             <div className="flex flex-col items-end gap-2 sm:gap-3 ml-2 sm:ml-4 flex-shrink-0">
                               <div className="text-right">
@@ -445,37 +546,40 @@ export default function EvaluationsPage() {
                                   {evaluation.items?.length || 0} items
                                 </div>
                               </div>
-                              <div className="flex gap-2">
-                                <Link
-                                  href={`/evaluations/${evaluation.id}/edit`}
-                                  className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-lg sm:rounded-xl font-semibold transition-all border border-primary-500/50 text-xs sm:text-sm text-center whitespace-nowrap"
-                                  title="Editar evaluación"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  Editar
-                                </Link>
-                                <button
-                                  onClick={async (e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (confirm('¿Estás seguro de que deseas eliminar esta evaluación? Esta acción no se puede deshacer.')) {
-                                      const success = await deleteEvaluation(evaluation.id);
-                                      if (success) {
-                                        fetchEvaluations(filters);
+                              {/* Botones de acción - Solo para ADMIN y EVALUATOR */}
+                              {!isPlayer && (
+                                <div className="flex gap-2">
+                                  <Link
+                                    href={`/evaluations/${evaluation.id}/edit`}
+                                    className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-lg sm:rounded-xl font-semibold transition-all border border-primary-500/50 text-xs sm:text-sm text-center whitespace-nowrap"
+                                    title="Editar evaluación"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    Editar
+                                  </Link>
+                                  <button
+                                    onClick={async (e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      if (confirm('¿Estás seguro de que deseas eliminar esta evaluación? Esta acción no se puede deshacer.')) {
+                                        const success = await deleteEvaluation(evaluation.id);
+                                        if (success) {
+                                          fetchEvaluations(filters);
+                                        }
                                       }
-                                    }
-                                  }}
-                                  disabled={isLoading || !isSubscriptionActive}
-                                  className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold transition-all border text-xs sm:text-sm whitespace-nowrap ${
-                                    !isSubscriptionActive
-                                      ? 'opacity-50 cursor-not-allowed bg-dark-elevated text-dark-text-tertiary border-dark-border'
-                                      : 'bg-error/20 hover:bg-error/30 text-error-light border-error/30'
-                                  }`}
-                                  title={!isSubscriptionActive ? 'Suscripción inactiva' : 'Eliminar evaluación'}
-                                >
-                                  Eliminar
-                                </button>
-                              </div>
+                                    }}
+                                    disabled={isLoading || !isSubscriptionActive}
+                                    className={`px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold transition-all border text-xs sm:text-sm whitespace-nowrap ${
+                                      !isSubscriptionActive
+                                        ? 'opacity-50 cursor-not-allowed bg-dark-elevated text-dark-text-tertiary border-dark-border'
+                                        : 'bg-error/20 hover:bg-error/30 text-error-light border-error/30'
+                                    }`}
+                                    title={!isSubscriptionActive ? 'Suscripción inactiva' : 'Eliminar evaluación'}
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </Link>

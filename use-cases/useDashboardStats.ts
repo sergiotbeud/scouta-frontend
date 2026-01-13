@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
 import { useAuthStore } from '../store/auth-store';
-import { DashboardStats } from '../ports/IApiClient';
+import { DashboardStats, PlayerStats } from '../ports/IApiClient';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
 
 export function useDashboardStats() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [stats, setStats] = useState<DashboardStats | PlayerStats | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const token = useAuthStore((state) => state.token);
@@ -52,6 +52,9 @@ export function useDashboardStats() {
     fetchStats,
   };
 }
+
+
+
 
 
 

@@ -12,6 +12,8 @@ import dynamic from 'next/dynamic';
 import { UserRole } from '../../domain/entities/User';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { getImageUrl } from '../../utils/imageUtils';
+import { PlayerStats } from '../../ports/IApiClient';
+import { PlayerDashboard } from '../../components/PlayerDashboard';
 
 // Importación dinámica para evitar problemas de SSR
 const SuperAdminDashboard = dynamic(
@@ -47,6 +49,7 @@ export default function DashboardPage() {
   }
 
   const isSuperAdmin = user.role === UserRole.SUPER_ADMIN;
+  const isPlayer = user.role === UserRole.PLAYER;
   
   if (isSuperAdmin) {
     return (
@@ -57,6 +60,11 @@ export default function DashboardPage() {
         </main>
       </div>
     );
+  }
+
+  // Dashboard para PLAYER
+  if (isPlayer) {
+    return <PlayerDashboard stats={stats as PlayerStats | null} statsLoading={statsLoading} statsError={statsError} user={user} club={club} clubLoading={clubLoading} />;
   }
 
   // Dashboard normal para ADMIN y EVALUATOR

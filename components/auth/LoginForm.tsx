@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useLogin } from '../../use-cases/useLogin';
+import { ChangePasswordModal } from './ChangePasswordModal';
+import { useAuthStore } from '../../store/auth-store';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -14,6 +17,10 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
   const { login, isLoading, error } = useLogin();
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [requiresCurrentPassword, setRequiresCurrentPassword] = useState(false);
+  const user = useAuthStore((state) => state.user);
+
   const {
     register,
     handleSubmit,
@@ -23,10 +30,20 @@ export function LoginForm() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    await login(data.email, data.password);
+    const result = await login(data.email, data.password);
+    if (result?.mustChangePassword) {
+      setRequiresCurrentPassword(false);
+      setShowChangePasswordModal(true);
+    }
+  };
+
+  const handlePasswordChangeSuccess = () => {
+    setShowChangePasswordModal(false);
+    window.location.href = '/dashboard';
   };
 
   return (
+    <>
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
         <label
@@ -114,6 +131,14 @@ export function LoginForm() {
         )}
       </button>
     </form>
+
+    <ChangePasswordModal
+      isOpen={showChangePasswordModal}
+      requiresCurrentPassword={requiresCurrentPassword}
+      isRequired={true}
+      onSuccess={handlePasswordChangeSuccess}
+    />
+    </>
   );
 }
 

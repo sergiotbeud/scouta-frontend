@@ -13,6 +13,7 @@ import { EvaluationRadarChart } from '../../../components/RadarChart';
 import { getCategoryAverages, prepareRadarChartData, calculateCategoryAverage, calculateStrengthsAndWeaknesses } from '../../../utils/evaluationUtils';
 import { SharedReport, Club } from '../../../ports/IApiClient';
 import { Player } from '../../../domain/entities/Player';
+import { UserRole } from '../../../domain/entities/User';
 import { AxiosApiClient } from '../../../adapters/api/AxiosApiClient';
 import { getImageUrl } from '../../../utils/imageUtils';
 
@@ -43,6 +44,7 @@ export default function EvaluationDetailPage() {
   const evaluationId = params.id as string;
   const token = useAuthStore((state) => state.token);
   const hasLoadedRef = useRef(false);
+  const isPlayer = user?.role === UserRole.PLAYER;
 
   useEffect(() => {
     setMounted(true);
@@ -72,25 +74,48 @@ export default function EvaluationDetailPage() {
         if (evalData) {
           setEvaluation(evalData);
           
-          try {
-            const playerResponse = await apiClient.getPlayerById(evalData.playerId);
-            if (playerResponse.success && playerResponse.data) {
-              setPlayer(playerResponse.data);
-              
-              if (playerResponse.data.clubId) {
-                try {
-                  const clubResponse = await apiClient.getClubById(playerResponse.data.clubId);
-                  if (clubResponse.success && clubResponse.data) {
-                    setClub(clubResponse.data);
-                  }
-                } catch (error) {
-                  console.error('Error al cargar club:', error);
+          // El jugador ahora viene incluido en la respuesta de la evaluación
+          if ((evalData as any).player) {
+            setPlayer((evalData as any).player);
+            
+            // Cargar información del club si está disponible
+            if ((evalData as any).player.clubId) {
+              try {
+                const clubResponse = await apiClient.getClubById((evalData as any).player.clubId);
+                if (clubResponse.success && clubResponse.data) {
+                  setClub(clubResponse.data);
                 }
+              } catch (error) {
+                console.error('Error al cargar club:', error);
               }
             }
-          } catch (error) {
-            console.error('Error al cargar jugador:', error);
-            hasLoadedRef.current = false; // Permitir reintento si falla
+          } else {
+            // Fallback: si no viene en la respuesta, intentar obtenerlo
+            try {
+              let playerResponse = await apiClient.getPlayerById(evalData.playerId);
+              
+              // Si no se encuentra, intentar buscar incluyendo eliminados
+              if (!playerResponse.success || !playerResponse.data) {
+                playerResponse = await apiClient.getPlayerById(evalData.playerId, true);
+              }
+              
+              if (playerResponse.success && playerResponse.data) {
+                setPlayer(playerResponse.data);
+                
+                if (playerResponse.data.clubId) {
+                  try {
+                    const clubResponse = await apiClient.getClubById(playerResponse.data.clubId);
+                    if (clubResponse.success && clubResponse.data) {
+                      setClub(clubResponse.data);
+                    }
+                  } catch (error) {
+                    console.error('Error al cargar club:', error);
+                  }
+                }
+              }
+            } catch (error) {
+              console.error('Error al cargar jugador:', error);
+            }
           }
           
           const playerEvaluations = await fetchPlayerEvaluations(evalData.playerId);
@@ -281,32 +306,36 @@ export default function EvaluationDetailPage() {
                   </svg>
                   Compartir
                 </button>
-                <Link
-                  href={`/evaluations/${evaluationId}/edit`}
-                  className="px-4 py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-xl font-semibold transition-all border border-primary-500/50 flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Editar
-                </Link>
-                <button
-                  onClick={async () => {
-                    if (confirm('¿Estás seguro de que deseas eliminar esta evaluación? Esta acción no se puede deshacer.')) {
-                      const success = await deleteEvaluation(evaluationId);
-                      if (success) {
-                        router.push('/evaluations');
-                      }
-                    }
-                  }}
-                  className="px-4 py-2 bg-error/20 hover:bg-error/30 text-error-light rounded-xl font-semibold transition-all border border-error/30 flex items-center gap-2"
-                  disabled={isLoading}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  {isLoading ? 'Eliminando...' : 'Eliminar'}
-                </button>
+                {!isPlayer && (
+                  <>
+                    <Link
+                      href={`/evaluations/${evaluationId}/edit`}
+                      className="px-4 py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-xl font-semibold transition-all border border-primary-500/50 flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Editar
+                    </Link>
+                    <button
+                      onClick={async () => {
+                        if (confirm('¿Estás seguro de que deseas eliminar esta evaluación? Esta acción no se puede deshacer.')) {
+                          const success = await deleteEvaluation(evaluationId);
+                          if (success) {
+                            router.push('/evaluations');
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-error/20 hover:bg-error/30 text-error-light rounded-xl font-semibold transition-all border border-error/30 flex items-center gap-2"
+                      disabled={isLoading}
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      {isLoading ? 'Eliminando...' : 'Eliminar'}
+                    </button>
+                  </>
+                )}
                   </div>
                 </div>
               </div>
@@ -473,20 +502,22 @@ export default function EvaluationDetailPage() {
                   <span className="text-success">✅</span>
                   Fortalezas
                 </h2>
-                <button
-                  onClick={() => {
-                    if (isEditingStrengths) {
-                      setEditableStrengths(evaluation?.strengths || []);
-                      setIsEditingStrengths(false);
-                    } else {
-                      setEditableStrengths(evaluation?.strengths || []);
-                      setIsEditingStrengths(true);
-                    }
-                  }}
-                  className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
-                >
-                  {isEditingStrengths ? 'Cancelar' : 'Editar'}
-                </button>
+                {!isPlayer && (
+                  <button
+                    onClick={() => {
+                      if (isEditingStrengths) {
+                        setEditableStrengths(evaluation?.strengths || []);
+                        setIsEditingStrengths(false);
+                      } else {
+                        setEditableStrengths(evaluation?.strengths || []);
+                        setIsEditingStrengths(true);
+                      }
+                    }}
+                    className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                  >
+                    {isEditingStrengths ? 'Cancelar' : 'Editar'}
+                  </button>
+                )}
               </div>
               
               {isEditingStrengths ? (
@@ -546,23 +577,38 @@ export default function EvaluationDetailPage() {
                   <span className="text-error-light">⚠️</span>
                   Debilidades
                 </h2>
-                <button
-                  onClick={() => {
-                    if (isEditingWeaknesses) {
-                      setEditableWeaknesses(evaluation?.weaknesses || []);
-                      setIsEditingWeaknesses(false);
-                    } else {
-                      setEditableWeaknesses(evaluation?.weaknesses || []);
-                      setIsEditingWeaknesses(true);
-                    }
-                  }}
-                  className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
-                >
-                  {isEditingWeaknesses ? 'Cancelar' : 'Editar'}
-                </button>
+                {!isPlayer && (
+                  <button
+                    onClick={() => {
+                      if (isEditingWeaknesses) {
+                        setEditableWeaknesses(evaluation?.weaknesses || []);
+                        setIsEditingWeaknesses(false);
+                      } else {
+                        setEditableWeaknesses(evaluation?.weaknesses || []);
+                        setIsEditingWeaknesses(true);
+                      }
+                    }}
+                    className="text-sm text-primary-400 hover:text-primary-300 transition-colors"
+                  >
+                    {isEditingWeaknesses ? 'Cancelar' : 'Editar'}
+                  </button>
+                )}
               </div>
               
-              {isEditingWeaknesses ? (
+              {isPlayer ? (
+                // PLAYER solo puede ver debilidades, no editarlas
+                <div className="space-y-2">
+                  {evaluation?.weaknesses && evaluation.weaknesses.length > 0 ? (
+                    evaluation.weaknesses.map((weakness, index) => (
+                      <div key={index} className="text-dark-text-secondary text-sm">
+                        • {weakness}
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-dark-text-tertiary text-sm">No hay debilidades registradas</p>
+                  )}
+                </div>
+              ) : isEditingWeaknesses ? (
                 <div>
                   <textarea
                     value={editableWeaknesses.join('\n')}

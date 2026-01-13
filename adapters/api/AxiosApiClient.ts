@@ -2,7 +2,9 @@ import axios, { AxiosInstance } from 'axios';
 import { 
   IApiClient, 
   LoginRequest, 
-  LoginResponse, 
+  LoginResponse,
+  ChangePasswordRequest,
+  ChangePasswordResponse,
   CreatePlayerRequest, 
   UpdatePlayerRequest,
   ApiResponse,
@@ -12,6 +14,7 @@ import {
   GetEvaluationsFilters,
   UploadPhotoResponse,
   DashboardStats,
+  PlayerStats,
   Club,
   CreateClubRequest,
   UpdateClubRequest,
@@ -117,6 +120,32 @@ export class AxiosApiClient implements IApiClient {
     }
   }
 
+  async changePassword(request: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+    try {
+      const response = await this.client.post<ChangePasswordResponse>(
+        '/api/auth/change-password',
+        request
+      );
+      return response.data;
+    } catch (error: any) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Error en changePassword:', {
+          message: error.message,
+          hasResponse: !!error.response,
+          responseData: error.response?.data,
+        });
+      }
+
+      if (error.response) {
+        return error.response.data;
+      }
+      if (error.request) {
+        throw new Error(`No se pudo conectar con el servidor. Verifica que el backend esté corriendo.`);
+      }
+      throw new Error(error.message || 'Error desconocido');
+    }
+  }
+
   async getPlayers(filters?: GetPlayersFilters): Promise<ApiResponse<Player[]>> {
     try {
       // Construir query string desde los filtros
@@ -176,9 +205,10 @@ export class AxiosApiClient implements IApiClient {
     }
   }
 
-  async getPlayerById(id: string): Promise<ApiResponse<Player>> {
+  async getPlayerById(id: string, includeDeleted: boolean = false): Promise<ApiResponse<Player>> {
     try {
-      const response = await this.client.get<ApiResponse<Player>>(`/api/players/${id}`);
+      const params = includeDeleted ? '?includeDeleted=true' : '';
+      const response = await this.client.get<ApiResponse<Player>>(`/api/players/${id}${params}`);
       return response.data;
     } catch (error: any) {
       if (error.response) {
@@ -521,9 +551,9 @@ export class AxiosApiClient implements IApiClient {
     }
   }
 
-  async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
+  async getDashboardStats(): Promise<ApiResponse<DashboardStats | PlayerStats>> {
     try {
-      const response = await this.client.get<ApiResponse<DashboardStats>>('/api/dashboard/stats');
+      const response = await this.client.get<ApiResponse<DashboardStats | PlayerStats>>('/api/dashboard/stats');
       return response.data;
     } catch (error: any) {
       if (error.response) {

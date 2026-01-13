@@ -21,6 +21,21 @@ export interface LoginResponse {
       updatedAt: string;
     };
     token: string;
+    mustChangePassword: boolean;
+  };
+  error?: string;
+  details?: unknown;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword?: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  success: boolean;
+  data?: {
+    message: string;
   };
   error?: string;
   details?: unknown;
@@ -136,6 +151,16 @@ export interface DashboardStats {
   evaluationsByMonth: Array<{ month: string; count: number }>;
 }
 
+export interface PlayerStats {
+  totalEvaluations: number;
+  lastEvaluationDate: string | null;
+  lastEvaluationScore: number | null;
+  averageGeneralScore: number | null;
+  evaluationsThisMonth: number;
+  scoreEvolution: Array<{ date: string; score: number }>;
+  evaluationsByCategory: Record<string, { average: number; count: number }>;
+}
+
 export interface Club {
   id: string;
   name: string;
@@ -185,9 +210,10 @@ export interface UpdateSubscriptionRequest {
 
 export interface IApiClient {
   login(credentials: LoginRequest): Promise<LoginResponse>;
+  changePassword(request: ChangePasswordRequest): Promise<ChangePasswordResponse>;
   getPlayers(filters?: GetPlayersFilters): Promise<ApiResponse<Player[]>>;
   getDeletedPlayers(): Promise<ApiResponse<Player[]>>;
-  getPlayerById(id: string): Promise<ApiResponse<Player>>;
+  getPlayerById(id: string, includeDeleted?: boolean): Promise<ApiResponse<Player>>;
   createPlayer(player: CreatePlayerRequest): Promise<ApiResponse<Player>>;
   updatePlayer(id: string, player: UpdatePlayerRequest): Promise<ApiResponse<Player>>;
   deletePlayer(id: string): Promise<ApiResponse<void>>;
@@ -209,7 +235,7 @@ export interface IApiClient {
   updateEvaluationTemplate(id: string, template: UpdateEvaluationTemplateRequest): Promise<ApiResponse<EvaluationTemplate>>;
   deleteEvaluationTemplate(id: string): Promise<ApiResponse<void>>;
   // Dashboard
-  getDashboardStats(): Promise<ApiResponse<DashboardStats>>;
+  getDashboardStats(): Promise<ApiResponse<DashboardStats | PlayerStats>>;
   // Clubs (solo SUPER_ADMIN)
   getClubs(): Promise<ApiResponse<Club[]>>;
   getClubById(id: string): Promise<ApiResponse<Club>>;

@@ -40,6 +40,12 @@ export default function PlayersPage() {
   }, [mounted, user, router]);
 
   useEffect(() => {
+    if (mounted && user && user.role === UserRole.PLAYER) {
+      router.push('/dashboard');
+    }
+  }, [mounted, user, router]);
+
+  useEffect(() => {
     if (mounted && isAuthenticated) {
       fetchPlayers(filters);
     }

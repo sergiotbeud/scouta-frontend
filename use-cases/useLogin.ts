@@ -8,7 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
 
 interface UseLoginReturn {
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ mustChangePassword: boolean } | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -19,7 +19,7 @@ export function useLogin(): UseLoginReturn {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<{ mustChangePassword: boolean } | null> => {
     setIsLoading(true);
     setError(null);
 
@@ -33,9 +33,17 @@ export function useLogin(): UseLoginReturn {
         };
         apiClient.setToken(response.data.token);
         setAuth(user, response.data.token);
-        router.push('/dashboard');
+
+        const mustChangePassword = response.data.mustChangePassword || false;
+
+        if (!mustChangePassword) {
+          router.push('/dashboard');
+        }
+
+        return { mustChangePassword };
       } else {
         setError(response.error || 'Error al iniciar sesión');
+        return null;
       }
     } catch (err: any) {
       if (err?.response?.data?.error) {
@@ -45,6 +53,7 @@ export function useLogin(): UseLoginReturn {
       } else {
         setError('Error al conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:3000');
       }
+      return null;
     } finally {
       setIsLoading(false);
     }
