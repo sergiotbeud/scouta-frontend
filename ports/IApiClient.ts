@@ -259,6 +259,9 @@ export interface IApiClient {
   createSharedReport(evaluationId: string, options?: { expiresInDays?: number; maxViews?: number }): Promise<ApiResponse<SharedReport>>;
   getSharedReport(token: string): Promise<ApiResponse<{ evaluation: Evaluation; player?: Player | null; evaluator?: User | null; club?: Club | null; sharedReport: SharedReportInfo }>>;
   generateSharedReportPDF(token: string): Promise<{ blob: Blob; filename: string }>;
+  // Admin (solo SUPER_ADMIN)
+  getPlayersWithoutPassword(): Promise<ApiResponse<PlayerWithoutPassword[]>>;
+  generatePlayerPassword(playerId: string): Promise<ApiResponse<GeneratePasswordResponse>>;
 }
 
 export interface CreateSubscriptionRequest {
@@ -267,6 +270,27 @@ export interface CreateSubscriptionRequest {
   maxPlayers?: number;
   maxEvaluators?: number;
   endDate?: string | null;
+}
+
+export interface PlayerWithoutPassword {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  clubId: string;
+  clubName: string;
+  userId: string | null;
+  hasPassword: boolean;
+  mustChangePassword: boolean;
+}
+
+export interface GeneratePasswordResponse {
+  playerId: string;
+  playerName: string;
+  email: string;
+  generatedPassword: string; // Solo se muestra una vez
+  userId: string;
+  clubName: string;
 }
 
 export interface User {

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useClubs } from '../use-cases/useClubs';
 import { useSubscription } from '../use-cases/useSubscriptions';
 import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
 import { useAuthStore } from '../store/auth-store';
-import { Club, Subscription, CreateSubscriptionRequest } from '../ports/IApiClient';
+import { Club, Subscription, CreateSubscriptionRequest, PlayerWithoutPassword, GeneratePasswordResponse } from '../ports/IApiClient';
 import { UserRole } from '../domain/entities/User';
 import { getImageUrl } from '../utils/imageUtils';
 
@@ -24,10 +24,63 @@ export function SuperAdminDashboard() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const [playersWithoutPassword, setPlayersWithoutPassword] = useState<PlayerWithoutPassword[]>([]);
+  const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<GeneratePasswordResponse | null>(null);
+  const [isGeneratingPassword, setIsGeneratingPassword] = useState<string | null>(null);
 
   const { subscription, isLoading: subscriptionLoading, error: subscriptionError, fetchSubscription, createSubscription, updateSubscription } = useSubscription(
     selectedClub?.id || ''
   );
+
+  useEffect(() => {
+    if (token && user?.role === UserRole.SUPER_ADMIN) {
+      loadPlayersWithoutPassword();
+    }
+  }, [token, user]);
+
+  const loadPlayersWithoutPassword = async () => {
+    if (!token) return;
+    setIsLoadingPlayers(true);
+    try {
+      apiClient.setToken(token);
+      const response = await apiClient.getPlayersWithoutPassword();
+      if (response.success && response.data) {
+        setPlayersWithoutPassword(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading players without password:', error);
+    } finally {
+      setIsLoadingPlayers(false);
+    }
+  };
+
+  const handleGeneratePassword = async (playerId: string) => {
+    if (!token) return;
+    setIsGeneratingPassword(playerId);
+    try {
+      apiClient.setToken(token);
+      const response = await apiClient.generatePlayerPassword(playerId);
+      if (response.success && response.data) {
+        setGeneratedPassword(response.data);
+        setShowPasswordModal(true);
+        // Recargar lista después de generar
+        await loadPlayersWithoutPassword();
+      } else {
+        alert(response.error || 'Error al generar contraseña');
+      }
+    } catch (error: any) {
+      alert(error.message || 'Error al generar contraseña');
+    } finally {
+      setIsGeneratingPassword(null);
+    }
+  };
+
+  const handleCopyPassword = (password: string) => {
+    navigator.clipboard.writeText(password);
+    alert('Contraseña copiada al portapapeles');
+  };
 
   const handleSelectClub = async (club: Club) => {
     setSelectedClub(club);
@@ -602,6 +655,165 @@ export function SuperAdminDashboard() {
           onClose={() => setShowSubscriptionModal(false)}
           isSubmitting={isSubmitting}
         />
+      )}
+
+      {/* Sección de Jugadores sin Contraseña */}
+      <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-xl font-semibold text-white mb-2">Jugadores sin Contraseña</h3>
+            <p className="text-dark-text-secondary text-sm">
+              Jugadores que necesitan una contraseña para acceder al sistema
+            </p>
+          </div>
+          <button
+            onClick={loadPlayersWithoutPassword}
+            disabled={isLoadingPlayers}
+            className="px-4 py-2 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-xl font-semibold transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Actualizar
+          </button>
+        </div>
+
+        {isLoadingPlayers ? (
+          <div className="text-center py-8 text-dark-text-secondary">Cargando...</div>
+        ) : playersWithoutPassword.length === 0 ? (
+          <div className="text-center py-8 text-dark-text-secondary">
+            ✅ Todos los jugadores tienen contraseña configurada
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-dark-border">
+                  <th className="px-4 py-3 text-white font-semibold">Nombre</th>
+                  <th className="px-4 py-3 text-white font-semibold">Email</th>
+                  <th className="px-4 py-3 text-white font-semibold">Club</th>
+                  <th className="px-4 py-3 text-white font-semibold">Estado</th>
+                  <th className="px-4 py-3 text-white font-semibold text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {playersWithoutPassword.map((player) => (
+                  <tr key={player.id} className="border-b border-dark-border/50 hover:bg-dark-elevated/50">
+                    <td className="px-4 py-3 text-white">{player.name}</td>
+                    <td className="px-4 py-3 text-dark-text-secondary">{player.email}</td>
+                    <td className="px-4 py-3 text-dark-text-secondary">{player.clubName}</td>
+                    <td className="px-4 py-3">
+                      {!player.hasPassword ? (
+                        <span className="px-2 py-1 bg-error/20 text-error-light rounded-lg text-xs font-semibold">
+                          Sin contraseña
+                        </span>
+                      ) : player.mustChangePassword ? (
+                        <span className="px-2 py-1 bg-warning/20 text-warning-light rounded-lg text-xs font-semibold">
+                          Debe cambiar
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => handleGeneratePassword(player.id)}
+                        disabled={isGeneratingPassword === player.id}
+                        className="px-4 py-2 bg-success hover:bg-success/80 text-white rounded-xl font-semibold transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isGeneratingPassword === player.id ? (
+                          <>
+                            <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Generando...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            Generar Contraseña
+                          </>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal de Contraseña Generada */}
+      {showPasswordModal && generatedPassword && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-surface/95 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl max-w-md w-full">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-white">Contraseña Generada</h3>
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setGeneratedPassword(null);
+                }}
+                className="text-dark-text-tertiary hover:text-white transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <p className="text-dark-text-secondary text-sm mb-1">Jugador:</p>
+                <p className="text-white font-semibold">{generatedPassword.playerName}</p>
+              </div>
+              <div>
+                <p className="text-dark-text-secondary text-sm mb-1">Email:</p>
+                <p className="text-white">{generatedPassword.email}</p>
+              </div>
+              <div>
+                <p className="text-dark-text-secondary text-sm mb-1">Club:</p>
+                <p className="text-white">{generatedPassword.clubName}</p>
+              </div>
+              <div>
+                <p className="text-dark-text-secondary text-sm mb-2">Contraseña generada:</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-dark-elevated px-4 py-3 rounded-xl text-success-light font-mono text-lg text-center">
+                    {generatedPassword.generatedPassword}
+                  </code>
+                  <button
+                    onClick={() => handleCopyPassword(generatedPassword.generatedPassword)}
+                    className="px-4 py-3 bg-primary-500/20 hover:bg-primary-500/30 text-primary-400 rounded-xl transition-colors"
+                    title="Copiar contraseña"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="bg-warning/20 border border-warning/30 rounded-xl p-4">
+                <p className="text-warning-light text-sm">
+                  ⚠️ Esta contraseña se mostrará solo una vez. El jugador deberá cambiarla en su primer login.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setGeneratedPassword(null);
+                }}
+                className="px-6 py-3 bg-primary-500 hover:bg-primary-500/80 text-white rounded-xl font-semibold transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

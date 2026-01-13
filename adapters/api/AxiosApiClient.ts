@@ -25,6 +25,8 @@ import {
   SharedReportInfo,
   CreateEvaluatorRequest,
   UpdateEvaluatorRequest,
+  PlayerWithoutPassword,
+  GeneratePasswordResponse,
 } from '../../ports/IApiClient';
 import { Player } from '../../domain/entities/Player';
 import { Evaluation } from '../../domain/entities/Evaluation';
@@ -896,6 +898,31 @@ export class AxiosApiClient implements IApiClient {
         throw new Error(error.response.data?.error || 'Error al generar PDF');
       }
       throw new Error(error.message || 'Error al generar PDF');
+    }
+  }
+
+  // Admin (solo SUPER_ADMIN)
+  async getPlayersWithoutPassword(): Promise<ApiResponse<PlayerWithoutPassword[]>> {
+    try {
+      const response = await this.client.get<ApiResponse<PlayerWithoutPassword[]>>('/api/admin/players-without-password');
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        return error.response.data;
+      }
+      throw new Error(error.message || 'Error al obtener jugadores sin contraseña');
+    }
+  }
+
+  async generatePlayerPassword(playerId: string): Promise<ApiResponse<GeneratePasswordResponse>> {
+    try {
+      const response = await this.client.post<ApiResponse<GeneratePasswordResponse>>(`/api/admin/generate-player-password/${playerId}`);
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        return error.response.data;
+      }
+      throw new Error(error.message || 'Error al generar contraseña');
     }
   }
 }
