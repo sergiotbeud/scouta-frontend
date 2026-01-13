@@ -12,7 +12,7 @@ import dynamic from 'next/dynamic';
 import { UserRole } from '../../domain/entities/User';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { getImageUrl } from '../../utils/imageUtils';
-import { PlayerStats } from '../../ports/IApiClient';
+import { PlayerStats, DashboardStats } from '../../ports/IApiClient';
 import { PlayerDashboard } from '../../components/PlayerDashboard';
 
 // Importación dinámica para evitar problemas de SSR
@@ -68,6 +68,13 @@ export default function DashboardPage() {
   }
 
   // Dashboard normal para ADMIN y EVALUATOR
+  // Type guard para verificar que stats sea DashboardStats
+  const isDashboardStats = (s: DashboardStats | PlayerStats | null): s is DashboardStats => {
+    return s !== null && 'totalPlayers' in s;
+  };
+
+  const dashboardStats = isDashboardStats(stats) ? stats : null;
+
   return (
     <div className="min-h-screen bg-dark-bg">
       <AppHeader title="Scouta" subtitle="Dashboard" />
@@ -156,12 +163,12 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
-              {statsLoading ? '...' : stats?.totalPlayers || 0}
+              {statsLoading ? '...' : dashboardStats?.totalPlayers || 0}
             </div>
             <div className="text-xs sm:text-sm text-dark-text-secondary">Total Jugadores</div>
-            {stats && stats.activePlayers !== stats.totalPlayers && (
+            {dashboardStats && dashboardStats.activePlayers !== dashboardStats.totalPlayers && (
               <div className="text-xs text-dark-text-tertiary mt-1">
-                {stats.activePlayers} activos
+                {dashboardStats.activePlayers} activos
               </div>
             )}
           </Link>
@@ -175,12 +182,12 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
-              {statsLoading ? '...' : stats?.totalEvaluations || 0}
+              {statsLoading ? '...' : dashboardStats?.totalEvaluations || 0}
             </div>
             <div className="text-xs sm:text-sm text-dark-text-secondary">Evaluaciones Totales</div>
-            {stats && stats.evaluationsThisMonth > 0 && (
+            {dashboardStats && dashboardStats.evaluationsThisMonth > 0 && (
               <div className="text-xs text-success mt-1">
-                {stats.evaluationsThisMonth} este mes
+                {dashboardStats.evaluationsThisMonth} este mes
               </div>
             )}
           </Link>
@@ -194,12 +201,12 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
-              {statsLoading ? '...' : stats?.evaluatedPlayers || 0}
+              {statsLoading ? '...' : dashboardStats?.evaluatedPlayers || 0}
             </div>
             <div className="text-xs sm:text-sm text-dark-text-secondary">Jugadores Evaluados</div>
-            {stats && stats.totalPlayers > 0 && (
+            {dashboardStats && dashboardStats.totalPlayers > 0 && (
               <div className="text-xs text-dark-text-tertiary mt-1">
-                {stats.totalPlayers - stats.evaluatedPlayers} sin evaluar
+                {dashboardStats.totalPlayers - dashboardStats.evaluatedPlayers} sin evaluar
               </div>
             )}
           </div>
@@ -213,7 +220,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="text-2xl sm:text-3xl font-bold text-white mb-1">
-              {statsLoading ? '...' : stats?.evaluationsThisMonth || 0}
+              {statsLoading ? '...' : dashboardStats?.evaluationsThisMonth || 0}
             </div>
             <div className="text-xs sm:text-sm text-dark-text-secondary">Evaluaciones Este Mes</div>
           </div>
@@ -231,16 +238,16 @@ export default function DashboardPage() {
           <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-12 shadow-2xl mb-8 text-center">
             <div className="text-dark-text-secondary">Cargando estadísticas...</div>
           </div>
-        ) : stats && (
+        ) : dashboardStats && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             {/* Distribución por Posición */}
-            {Object.keys(stats.playersByPosition).length > 0 ? (
+            {Object.keys(dashboardStats.playersByPosition).length > 0 ? (
               <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl">
                 <h3 className="text-xl font-bold text-white mb-4">Distribución por Posición</h3>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={Object.entries(stats.playersByPosition).map(([name, value]) => ({ name, value }))}
+                      data={Object.entries(dashboardStats.playersByPosition).map(([name, value]) => ({ name, value }))}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -249,7 +256,7 @@ export default function DashboardPage() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {Object.entries(stats.playersByPosition).map((_, index) => (
+                      {Object.entries(dashboardStats.playersByPosition).map((_, index) => (
                         <Cell key={`cell-${index}`} fill={['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'][index % 6]} />
                       ))}
                     </Pie>
@@ -274,11 +281,11 @@ export default function DashboardPage() {
             )}
 
             {/* Evaluaciones por Mes */}
-            {stats.evaluationsByMonth.length > 0 ? (
+            {dashboardStats.evaluationsByMonth.length > 0 ? (
               <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl">
                 <h3 className="text-xl font-bold text-white mb-4">Evaluaciones por Mes (Últimos 6 meses)</h3>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={stats.evaluationsByMonth}>
+                  <BarChart data={dashboardStats.evaluationsByMonth}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis 
                       dataKey="month" 
