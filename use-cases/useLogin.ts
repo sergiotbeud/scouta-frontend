@@ -8,7 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const apiClient = new AxiosApiClient(API_URL);
 
 interface UseLoginReturn {
-  login: (email: string, password: string) => Promise<{ mustChangePassword: boolean } | null>;
+  login: (email: string, password: string) => Promise<{ mustChangePassword: boolean; mustChangeEmail: boolean } | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -19,7 +19,7 @@ export function useLogin(): UseLoginReturn {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
 
-  const login = async (email: string, password: string): Promise<{ mustChangePassword: boolean } | null> => {
+  const login = async (email: string, password: string): Promise<{ mustChangePassword: boolean; mustChangeEmail: boolean } | null> => {
     setIsLoading(true);
     setError(null);
 
@@ -36,12 +36,13 @@ export function useLogin(): UseLoginReturn {
         setAuth(user, response.data.token);
 
         const mustChangePassword = response.data.mustChangePassword || false;
+        const mustChangeEmail = response.data.mustChangeEmail || false;
 
-        if (!mustChangePassword) {
+        if (!mustChangePassword && !mustChangeEmail) {
           router.push('/dashboard');
         }
 
-        return { mustChangePassword };
+        return { mustChangePassword, mustChangeEmail };
       } else {
         setError(response.error || 'Error al iniciar sesión');
         return null;

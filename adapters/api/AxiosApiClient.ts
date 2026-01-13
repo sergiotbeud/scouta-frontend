@@ -5,6 +5,8 @@ import {
   LoginResponse,
   ChangePasswordRequest,
   ChangePasswordResponse,
+  ChangeEmailRequest,
+  ChangeEmailResponse,
   CreatePlayerRequest, 
   UpdatePlayerRequest,
   ApiResponse,
@@ -132,6 +134,32 @@ export class AxiosApiClient implements IApiClient {
     } catch (error: any) {
       if (process.env.NODE_ENV === 'development') {
         console.error('❌ Error en changePassword:', {
+          message: error.message,
+          hasResponse: !!error.response,
+          responseData: error.response?.data,
+        });
+      }
+
+      if (error.response) {
+        return error.response.data;
+      }
+      if (error.request) {
+        throw new Error(`No se pudo conectar con el servidor. Verifica que el backend esté corriendo.`);
+      }
+      throw new Error(error.message || 'Error desconocido');
+    }
+  }
+
+  async changeEmail(request: ChangeEmailRequest): Promise<ChangeEmailResponse> {
+    try {
+      const response = await this.client.post<ChangeEmailResponse>(
+        '/api/auth/change-email',
+        request
+      );
+      return response.data;
+    } catch (error: any) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('❌ Error en changeEmail:', {
           message: error.message,
           hasResponse: !!error.response,
           responseData: error.response?.data,

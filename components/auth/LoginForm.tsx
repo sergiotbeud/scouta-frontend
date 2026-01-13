@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useLogin } from '../../use-cases/useLogin';
 import { ChangePasswordModal } from './ChangePasswordModal';
+import { ChangeEmailModal } from './ChangeEmailModal';
 import { useAuthStore } from '../../store/auth-store';
 
 const loginSchema = z.object({
@@ -18,6 +19,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginForm() {
   const { login, isLoading, error } = useLogin();
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showChangeEmailModal, setShowChangeEmailModal] = useState(false);
   const [requiresCurrentPassword, setRequiresCurrentPassword] = useState(false);
   const user = useAuthStore((state) => state.user);
 
@@ -31,15 +33,36 @@ export function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     const result = await login(data.email, data.password);
-    if (result?.mustChangePassword) {
-      setRequiresCurrentPassword(false);
-      setShowChangePasswordModal(true);
+    if (result) {
+      // Priorizar cambio de email sobre cambio de contraseña
+      if (result.mustChangeEmail) {
+        setShowChangeEmailModal(true);
+      } else if (result.mustChangePassword) {
+        setRequiresCurrentPassword(false);
+        setShowChangePasswordModal(true);
+      }
     }
   };
 
   const handlePasswordChangeSuccess = () => {
     setShowChangePasswordModal(false);
-    window.location.href = '/dashboard';
+    // Verificar si también necesita cambiar email después de cambiar contraseña
+    if (user?.email?.endsWith('@scouta.local')) {
+      setShowChangeEmailModal(true);
+    } else {
+      window.location.href = '/dashboard';
+    }
+  };
+
+  const handleEmailChangeSuccess = () => {
+    setShowChangeEmailModal(false);
+    // Después de cambiar email, verificar si necesita cambiar contraseña
+    if (user?.mustChangePassword) {
+      setRequiresCurrentPassword(false);
+      setShowChangePasswordModal(true);
+    } else {
+      window.location.href = '/dashboard';
+    }
   };
 
   return (
@@ -138,6 +161,15 @@ export function LoginForm() {
       isRequired={true}
       onSuccess={handlePasswordChangeSuccess}
     />
+    
+    {user && (
+      <ChangeEmailModal
+        isOpen={showChangeEmailModal}
+        isRequired={true}
+        currentEmail={user.email}
+        onSuccess={handleEmailChangeSuccess}
+      />
+    )}
     </>
   );
 }

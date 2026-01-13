@@ -22,6 +22,7 @@ export interface LoginResponse {
     };
     token: string;
     mustChangePassword: boolean;
+    mustChangeEmail: boolean; // Nuevo: indica si el email es generado
   };
   error?: string;
   details?: unknown;
@@ -32,7 +33,20 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+export interface ChangeEmailRequest {
+  newEmail: string;
+}
+
 export interface ChangePasswordResponse {
+  success: boolean;
+  data?: {
+    message: string;
+  };
+  error?: string;
+  details?: unknown;
+}
+
+export interface ChangeEmailResponse {
   success: boolean;
   data?: {
     message: string;
@@ -211,6 +225,7 @@ export interface UpdateSubscriptionRequest {
 export interface IApiClient {
   login(credentials: LoginRequest): Promise<LoginResponse>;
   changePassword(request: ChangePasswordRequest): Promise<ChangePasswordResponse>;
+  changeEmail(request: ChangeEmailRequest): Promise<ChangeEmailResponse>;
   getPlayers(filters?: GetPlayersFilters): Promise<ApiResponse<Player[]>>;
   getDeletedPlayers(): Promise<ApiResponse<Player[]>>;
   getPlayerById(id: string, includeDeleted?: boolean): Promise<ApiResponse<Player>>;
