@@ -30,6 +30,7 @@ export function useLogin(): UseLoginReturn {
         const user: User = {
           ...response.data.user,
           role: response.data.user.role as UserRole,
+          mustChangePassword: response.data.mustChangePassword || false,
         };
         apiClient.setToken(response.data.token);
         setAuth(user, response.data.token);

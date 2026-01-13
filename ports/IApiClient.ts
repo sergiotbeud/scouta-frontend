@@ -276,6 +276,7 @@ export interface User {
   photoUrl: string | null;
   role: string;
   isActive: boolean;
+  mustChangePassword: boolean;
   createdAt: string;
   updatedAt: string;
 }
