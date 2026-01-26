@@ -40,7 +40,6 @@ import { ISubscriptionClient } from '../../ports/ISubscriptionClient';
 import { IReportClient } from '../../ports/IReportClient';
 import { IEvaluatorClient } from '../../ports/IEvaluatorClient';
 import { IAdminClient } from '../../ports/IAdminClient';
-import { IAuthStore } from '../../ports/IAuthStore';
 import { isAxiosError } from '../../utils/typeGuards';
 import { Player } from '../../domain/entities/Player';
 import { Evaluation } from '../../domain/entities/Evaluation';
@@ -130,10 +129,9 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Token expirado o inválido - limpiar token y redirigir al login
+          // Token expirado o inválido - limpiar token
+          // El manejo de la redirección al login se hace en los hooks/componentes que usan el cliente
           this.token = null;
-          // Usar el authStore para limpiar la autenticación y redirigir
-          this.authStore.clearAuth();
         }
         return Promise.reject(error);
       }
