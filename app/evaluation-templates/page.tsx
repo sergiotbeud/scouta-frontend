@@ -32,6 +32,8 @@ export default function EvaluationTemplatesPage() {
     'cognitivo': [],
     'psicológico': [],
     'biomédico': [],
+    'vad': [],
+    'vao': [],
   });
   const [newItemInputs, setNewItemInputs] = useState<Record<EvaluationItemCategory, string>>({
     'técnico': '',
@@ -40,6 +42,8 @@ export default function EvaluationTemplatesPage() {
     'cognitivo': '',
     'psicológico': '',
     'biomédico': '',
+    'vad': '',
+    'vao': '',
   });
 
   const availablePositions = [
@@ -113,6 +117,8 @@ export default function EvaluationTemplatesPage() {
       'Recuperación de 1 Minuto', 'Cansancio Reportado', 'Capacidad de Recuperar Día a Día', 'Microlesiones',
       'Carga Semanal Total', 'Carga Acumulada',
     ],
+    'vad': [], // Video Análisis Defensivo - items agregados por evaluador
+    'vao': [], // Vídeo Análisis Ofensivo - items agregados por evaluador
   };
 
   const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico', 'vad', 'vao'];
@@ -161,6 +167,8 @@ export default function EvaluationTemplatesPage() {
       'cognitivo': [],
       'psicológico': [],
       'biomédico': [],
+      'vad': [],
+      'vao': [],
     });
     setNewItemInputs({
       'técnico': '',
@@ -169,6 +177,8 @@ export default function EvaluationTemplatesPage() {
       'cognitivo': '',
       'psicológico': '',
       'biomédico': '',
+      'vad': '',
+      'vao': '',
     });
     setEditingTemplate(null);
     setShowCreateModal(true);
@@ -185,6 +195,8 @@ export default function EvaluationTemplatesPage() {
       'cognitivo': [],
       'psicológico': [],
       'biomédico': [],
+      'vad': [],
+      'vao': [],
     };
     
     template.items.forEach(item => {

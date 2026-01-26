@@ -9,5 +9,5 @@ export interface IClubClient {
   getMyClubs(): Promise<ApiResponse<Club[]>>;
   createClub(club: CreateClubRequest): Promise<ApiResponse<Club>>;
   updateClub(id: string, club: UpdateClubRequest): Promise<ApiResponse<Club>>;
-  deleteClub(id: string): Promise<ApiResponse<void>>;
+  deleteClub(id: string, hardDelete?: boolean): Promise<ApiResponse<void>>;
 }

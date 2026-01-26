@@ -441,7 +441,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       // Validar respuesta con Zod
       const validated = safeValidateApiResponse(response.data, ApiResponseEvaluationSchema);
       if (validated) {
-        return validated;
+        // Cast explícito para asegurar compatibilidad de tipos
+        return validated as ApiResponse<Evaluation>;
       }
       // Si la validación falla pero hay datos, retornarlos con advertencia
       if (response.data) {
@@ -500,7 +501,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       // Validar respuesta con Zod
       const validated = safeValidateApiResponse(response.data, ApiResponseEvaluationSchema);
       if (validated) {
-        return validated;
+        // Cast explícito para asegurar compatibilidad de tipos
+        return validated as ApiResponse<Evaluation>;
       }
       // Si la validación falla pero hay datos, retornarlos con advertencia
       if (response.data) {
@@ -546,7 +548,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       // Validar respuesta con Zod
       const validated = safeValidateApiResponse(response.data, ApiResponseEvaluationsSchema);
       if (validated) {
-        return validated;
+        // Cast explícito para asegurar compatibilidad de tipos
+        return validated as ApiResponse<Evaluation[]>;
       }
       // Si la validación falla pero hay datos, retornarlos con advertencia
       if (response.data) {

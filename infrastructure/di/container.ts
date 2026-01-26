@@ -23,8 +23,7 @@ container.register<IAuthStore>('IAuthStore', {
 
 // Función factory para crear AxiosApiClient
 const createApiClient = (c: DependencyContainer): AxiosApiClient => {
-  const authStore = c.resolve<IAuthStore>('IAuthStore');
-  return new AxiosApiClient(API_URL, authStore);
+  return new AxiosApiClient(API_URL);
 };
 
 // Registrar IApiClient con implementación AxiosApiClient como singleton
