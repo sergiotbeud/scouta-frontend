@@ -7,14 +7,10 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { usePlayers } from '../../../../use-cases/usePlayers';
+import { useApiClient } from '../../../../hooks/useApiClient';
 import Link from 'next/link';
 import { ScoutaLogo } from '../../../../components/ScoutaLogo';
-import { AxiosApiClient } from '../../../../adapters/api/AxiosApiClient';
-import { useAuthStore as useAuth } from '../../../../store/auth-store';
 import { Player } from '../../../../domain/entities/Player';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 const playerSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -40,7 +36,7 @@ export default function EditPlayerPage() {
   const params = useParams();
   const [mounted, setMounted] = useState(false);
   const { updatePlayer, isLoading, error } = usePlayers();
-  const token = useAuth((state) => state.token);
+  const apiClient = useApiClient();
   const [player, setPlayer] = useState<Player | null>(null);
   const [isLoadingPlayer, setIsLoadingPlayer] = useState(true);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -94,10 +90,6 @@ export default function EditPlayerPage() {
       setIsLoadingPlayer(true);
       
       try {
-        if (token) {
-          apiClient.setToken(token);
-        }
-        
         const response = await apiClient.getPlayerById(playerId);
         if (response.success && response.data) {
           const playerData = response.data;
@@ -119,7 +111,8 @@ export default function EditPlayerPage() {
           
           // Cargar foto si existe
           if (playerData.photoUrl) {
-            setPhotoPreview(`${API_URL}${playerData.photoUrl}`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            setPhotoPreview(`${apiUrl}${playerData.photoUrl}`);
           }
         } else {
           hasLoadedRef.current = false; // Permitir reintento si falla
@@ -258,9 +251,6 @@ export default function EditPlayerPage() {
     if (photoFile) {
       setIsUploadingPhoto(true);
       try {
-        if (token) {
-          apiClient.setToken(token);
-        }
         const uploadResponse = await apiClient.uploadPlayerPhoto(photoFile);
         if (uploadResponse.success && uploadResponse.data) {
           photoUrl = uploadResponse.data.photoUrl;

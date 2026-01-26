@@ -1,26 +1,21 @@
 import { useState, useEffect } from 'react';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
+import { useEvaluatorClient } from '../hooks/useEvaluatorClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { User, CreateEvaluatorRequest, UpdateEvaluatorRequest } from '../ports/IApiClient';
-import { useAuthStore } from '../store/auth-store';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export function useEvaluators() {
   const [evaluators, setEvaluators] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const token = useAuthStore((state) => state.token);
+  const evaluatorClient = useEvaluatorClient();
+  const { handleError } = useErrorHandler();
 
   const fetchEvaluators = async (): Promise<void> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.getEvaluators();
+      const response = await evaluatorClient.getEvaluators();
       if (response.success && response.data) {
         setEvaluators(response.data);
       } else {
@@ -34,17 +29,13 @@ export function useEvaluators() {
   };
 
   useEffect(() => {
-    if (token) {
-      fetchEvaluators();
-    }
-  }, [token]);
+    fetchEvaluators();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createEvaluator = async (evaluator: CreateEvaluatorRequest): Promise<User | null> => {
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.createEvaluator(evaluator);
+      const response = await evaluatorClient.createEvaluator(evaluator);
       if (response.success && response.data) {
         await fetchEvaluators(); // Recargar lista
         return response.data;
@@ -52,18 +43,17 @@ export function useEvaluators() {
         setError(response.error || 'Error al crear evaluador');
         return null;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al crear evaluador');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al crear evaluador');
+      setError(errorMessage);
       return null;
     }
   };
 
   const updateEvaluator = async (id: string, evaluator: UpdateEvaluatorRequest): Promise<User | null> => {
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.updateEvaluator(id, evaluator);
+      // El token se configura automáticamente en useEvaluatorClient
+      const response = await evaluatorClient.updateEvaluator(id, evaluator);
       if (response.success && response.data) {
         await fetchEvaluators(); // Recargar lista
         return response.data;
@@ -71,18 +61,16 @@ export function useEvaluators() {
         setError(response.error || 'Error al actualizar evaluador');
         return null;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al actualizar evaluador');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al actualizar evaluador');
+      setError(errorMessage);
       return null;
     }
   };
 
   const deleteEvaluator = async (id: string): Promise<boolean> => {
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.deleteEvaluator(id);
+      const response = await evaluatorClient.deleteEvaluator(id);
       if (response.success) {
         await fetchEvaluators(); // Recargar lista
         return true;
@@ -90,8 +78,9 @@ export function useEvaluators() {
         setError(response.error || 'Error al eliminar evaluador');
         return false;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al eliminar evaluador');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al eliminar evaluador');
+      setError(errorMessage);
       return false;
     }
   };

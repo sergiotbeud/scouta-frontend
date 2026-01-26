@@ -1,30 +1,19 @@
-import { useState, useEffect } from 'react';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
-import { useAuthStore } from '../store/auth-store';
+import { useState } from 'react';
+import { useReportClient } from '../hooks/useReportClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { SharedReport } from '../ports/IApiClient';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export function useReports() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const token = useAuthStore((state) => state.token);
-
-  useEffect(() => {
-    if (token) {
-      apiClient.setToken(token);
-    }
-  }, [token]);
+  const reportClient = useReportClient();
+  const { handleError } = useErrorHandler();
 
   const generatePDF = async (evaluationId: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const { blob, filename } = await apiClient.generateEvaluationPDF(evaluationId);
+      const { blob, filename } = await reportClient.generateEvaluationPDF(evaluationId);
       
       // Crear un link temporal para descargar el PDF
       const url = window.URL.createObjectURL(blob);
@@ -37,8 +26,9 @@ export function useReports() {
       window.URL.revokeObjectURL(url);
       
       return true;
-    } catch (err: any) {
-      setError(err.message || 'Error al generar PDF');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al generar PDF');
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -52,17 +42,15 @@ export function useReports() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.createSharedReport(evaluationId, options);
+      const response = await reportClient.createSharedReport(evaluationId, options);
       if (response.success && response.data) {
         return response.data;
       }
       setError(response.error || 'Error al crear link compartido');
       return null;
-    } catch (err: any) {
-      setError(err.message || 'Error al crear link compartido');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al crear link compartido');
+      setError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -73,7 +61,7 @@ export function useReports() {
     setIsLoading(true);
     setError(null);
     try {
-      const { blob, filename } = await apiClient.generateSharedReportPDF(token);
+      const { blob, filename } = await reportClient.generateSharedReportPDF(token);
       
       // Crear un link temporal para descargar el PDF
       const url = window.URL.createObjectURL(blob);
@@ -86,8 +74,9 @@ export function useReports() {
       window.URL.revokeObjectURL(url);
       
       return true;
-    } catch (err: any) {
-      setError(err.message || 'Error al generar PDF');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al generar PDF');
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);

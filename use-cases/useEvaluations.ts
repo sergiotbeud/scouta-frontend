@@ -1,23 +1,15 @@
-import { useState, useEffect } from 'react';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
-import { useAuthStore } from '../store/auth-store';
+import { useState } from 'react';
+import { useEvaluationClient } from '../hooks/useEvaluationClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { Evaluation } from '../domain/entities/Evaluation';
 import { CreateEvaluationRequest, UpdateEvaluationRequest, GetEvaluationsFilters } from '../ports/IApiClient';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export function useEvaluations() {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const token = useAuthStore((state) => state.token);
-
-  useEffect(() => {
-    if (token) {
-      apiClient.setToken(token);
-    }
-  }, [token]);
+  const evaluationClient = useEvaluationClient();
+  const { handleError } = useErrorHandler();
 
   // Función helper para normalizar items que pueden venir con estructura {props: {...}}
   const normalizeEvaluationItems = (items: any[] | undefined): any[] => {
@@ -41,10 +33,7 @@ export function useEvaluations() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.getEvaluations(filters);
+      const response = await evaluationClient.getEvaluations(filters);
       if (response.success && response.data) {
         // Normalizar los items de todas las evaluaciones
         const normalizedEvaluations = response.data.map(evaluation => ({
@@ -55,8 +44,9 @@ export function useEvaluations() {
       } else {
         setError(response.error || 'Error al cargar evaluaciones');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar evaluaciones');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al cargar evaluaciones');
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -66,10 +56,8 @@ export function useEvaluations() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.getPlayerEvaluations(playerId, filters);
+      // El token se configura automáticamente en useEvaluationClient
+      const response = await evaluationClient.getPlayerEvaluations(playerId, filters);
       if (response.success && response.data) {
         // Normalizar los items de todas las evaluaciones
         const normalizedEvaluations = response.data.map(evaluation => ({
@@ -94,10 +82,8 @@ export function useEvaluations() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.getEvaluationById(id);
+      // El token se configura automáticamente en useEvaluationClient
+      const response = await evaluationClient.getEvaluationById(id);
       if (response.success && response.data) {
         // Normalizar los items si vienen con estructura {props: {...}}
         const normalizedData = {
@@ -109,8 +95,9 @@ export function useEvaluations() {
         setError(response.error || 'Error al cargar evaluación');
         return null;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar evaluación');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al cargar evaluación');
+      setError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -121,18 +108,17 @@ export function useEvaluations() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.createEvaluation(evaluationData);
+      // El token se configura automáticamente en useEvaluationClient
+      const response = await evaluationClient.createEvaluation(evaluationData);
       if (response.success && response.data) {
         return response.data;
       } else {
         setError(response.error || 'Error al crear evaluación');
         return null;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al crear evaluación');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al crear evaluación');
+      setError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -143,10 +129,8 @@ export function useEvaluations() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.updateEvaluation(id, evaluationData);
+      // El token se configura automáticamente en useEvaluationClient
+      const response = await evaluationClient.updateEvaluation(id, evaluationData);
       if (response.success && response.data) {
         // Normalizar los items si vienen con estructura {props: {...}}
         const normalizedData = {
@@ -160,8 +144,9 @@ export function useEvaluations() {
         setError(response.error || 'Error al actualizar evaluación');
         return null;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al actualizar evaluación');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al actualizar evaluación');
+      setError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -172,10 +157,8 @@ export function useEvaluations() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.deleteEvaluation(id);
+      // El token se configura automáticamente en useEvaluationClient
+      const response = await evaluationClient.deleteEvaluation(id);
       if (response.success) {
         // Remover de la lista local si existe
         setEvaluations(prev => prev.filter(e => e.id !== id));
@@ -184,8 +167,9 @@ export function useEvaluations() {
         setError(response.error || 'Error al eliminar evaluación');
         return false;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al eliminar evaluación');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al eliminar evaluación');
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);

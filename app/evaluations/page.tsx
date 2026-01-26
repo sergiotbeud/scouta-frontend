@@ -12,11 +12,8 @@ import { Evaluation } from '../../domain/entities/Evaluation';
 import { GetEvaluationsFilters, Club } from '../../ports/IApiClient';
 import { UserRole } from '../../domain/entities/User';
 import { useMySubscription } from '../../use-cases/useMySubscription';
-import { AxiosApiClient } from '../../adapters/api/AxiosApiClient';
+import { useApiClient } from '../../hooks/useApiClient';
 import { Player } from '../../domain/entities/Player';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 import { getImageUrl } from '../../utils/imageUtils';
 
 export default function EvaluationsPage() {
@@ -35,7 +32,6 @@ export default function EvaluationsPage() {
   const [viewMode, setViewMode] = useState<'latest' | 'all'>('latest');
   const [playersData, setPlayersData] = useState<Map<string, Player>>(new Map());
   const [clubsData, setClubsData] = useState<Map<string, Club>>(new Map());
-  const token = useAuthStore((state) => state.token);
   const isPlayer = user?.role === UserRole.PLAYER;
   const [playerId, setPlayerId] = useState<string | null>(null);
 
@@ -57,9 +53,8 @@ export default function EvaluationsPage() {
 
   useEffect(() => {
     const fetchPlayerId = async () => {
-      if (isPlayer && user?.id && token) {
+      if (isPlayer && user?.id) {
         try {
-          apiClient.setToken(token);
           const playersResponse = await apiClient.getPlayers();
           if (playersResponse.success && playersResponse.data) {
             const player = playersResponse.data.find(p => p.userId === user.id);
@@ -75,11 +70,11 @@ export default function EvaluationsPage() {
     if (mounted && isPlayer) {
       fetchPlayerId();
     }
-  }, [mounted, isPlayer, user?.id, token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, isPlayer, user?.id]);
 
   useEffect(() => {
-    if (mounted && isAuthenticated && token) {
-      apiClient.setToken(token);
+    if (mounted && isAuthenticated) {
       if (isPlayer && playerId) {
         fetchEvaluations({ playerId });
       } else if (!isPlayer) {
@@ -88,12 +83,12 @@ export default function EvaluationsPage() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, isAuthenticated, filters, token, isPlayer, playerId]);
+  }, [mounted, isAuthenticated, filters, isPlayer, playerId]);
 
   // Cargar datos completos de jugadores y clubes
   useEffect(() => {
     const loadPlayersAndClubs = async () => {
-      if (!mounted || !isAuthenticated || !token || players.length === 0) return;
+      if (!mounted || !isAuthenticated || players.length === 0) return;
 
       const playersMap = new Map<string, Player>();
       const clubsMap = new Map<string, Club>();
@@ -133,7 +128,7 @@ export default function EvaluationsPage() {
 
     loadPlayersAndClubs();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, isAuthenticated, token, players]);
+  }, [mounted, isAuthenticated, players]);
 
   // Actualizar filtros cuando cambien los selectores
   useEffect(() => {

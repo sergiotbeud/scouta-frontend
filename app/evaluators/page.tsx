@@ -10,12 +10,9 @@ import { SubscriptionBlockedBanner } from '../../components/SubscriptionBlockedB
 import { User, CreateEvaluatorRequest, UpdateEvaluatorRequest } from '../../ports/IApiClient';
 import { UserRole } from '../../domain/entities/User';
 import Link from 'next/link';
-import { AxiosApiClient } from '../../adapters/api/AxiosApiClient';
+import { useApiClient } from '../../hooks/useApiClient';
 import { useMySubscription } from '../../use-cases/useMySubscription';
 import { getImageUrl } from '../../utils/imageUtils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export default function EvaluatorsPage() {
   const user = useAuthStore((state) => state.user);
@@ -33,7 +30,6 @@ export default function EvaluatorsPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const token = useAuthStore((state) => state.token);
 
   useEffect(() => {
     setMounted(true);
@@ -86,9 +82,6 @@ export default function EvaluatorsPage() {
     if (photoFile) {
       setIsUploadingPhoto(true);
       try {
-        if (token) {
-          apiClient.setToken(token);
-        }
         const uploadResponse = await apiClient.uploadUserPhoto(photoFile);
         if (uploadResponse.success && uploadResponse.data) {
           photoUrl = uploadResponse.data.photoUrl;
@@ -137,9 +130,6 @@ export default function EvaluatorsPage() {
     if (photoFile) {
       setIsUploadingPhoto(true);
       try {
-        if (token) {
-          apiClient.setToken(token);
-        }
         const uploadResponse = await apiClient.uploadUserPhoto(photoFile);
         if (uploadResponse.success && uploadResponse.data) {
           photoUrl = uploadResponse.data.photoUrl;

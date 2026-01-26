@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
+import { useAuthClient } from '../hooks/useAuthClient';
+import { useApiClient } from '../hooks/useApiClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { useAuthStore } from '../store/auth-store';
 import { User, UserRole } from '../domain/entities/User';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 interface UseLoginReturn {
   login: (email: string, password: string) => Promise<{ mustChangePassword: boolean; mustChangeEmail: boolean } | null>;
@@ -18,13 +17,16 @@ export function useLogin(): UseLoginReturn {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const authClient = useAuthClient();
+  const apiClient = useApiClient(); // Necesario para setToken
+  const { handleError } = useErrorHandler();
 
   const login = async (email: string, password: string): Promise<{ mustChangePassword: boolean; mustChangeEmail: boolean } | null> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await apiClient.login({ email, password });
+      const response = await authClient.login({ email, password });
 
       if (response.success && response.data) {
         const user: User = {
@@ -47,14 +49,9 @@ export function useLogin(): UseLoginReturn {
         setError(response.error || 'Error al iniciar sesión');
         return null;
       }
-    } catch (err: any) {
-      if (err?.response?.data?.error) {
-        setError(err.response.data.error);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Error al conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:3000');
-      }
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al iniciar sesión');
+      setError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);

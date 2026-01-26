@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
+import { useClubClient } from '../hooks/useClubClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { Club } from '../ports/IApiClient';
 import { useAuthStore } from '../store/auth-store';
 import { UserRole } from '../domain/entities/User';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export function useMyClub() {
   const [club, setClub] = useState<Club | null>(null);
@@ -13,6 +11,8 @@ export function useMyClub() {
   const [error, setError] = useState<string | null>(null);
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const clubClient = useClubClient();
+  const { handleError } = useErrorHandler();
 
   useEffect(() => {
     const fetchMyClub = async () => {
@@ -31,8 +31,7 @@ export function useMyClub() {
       setError(null);
 
       try {
-        apiClient.setToken(token);
-        const response = await apiClient.getMyClubs();
+        const response = await clubClient.getMyClubs();
         
         if (response.success && response.data && response.data.length > 0) {
           // Si tiene múltiples clubes, tomar el primero (o el principal si está definido)
@@ -41,8 +40,9 @@ export function useMyClub() {
         } else {
           setClub(null);
         }
-      } catch (err: any) {
-        setError(err.message || 'Error al cargar información del club');
+      } catch (err: unknown) {
+        const errorMessage = handleError(err, 'Error al cargar información del club');
+        setError(errorMessage);
         setClub(null);
       } finally {
         setIsLoading(false);

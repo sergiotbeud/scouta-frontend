@@ -14,11 +14,8 @@ import { getCategoryAverages, prepareRadarChartData, calculateCategoryAverage, c
 import { SharedReport, Club } from '../../../ports/IApiClient';
 import { Player } from '../../../domain/entities/Player';
 import { UserRole } from '../../../domain/entities/User';
-import { AxiosApiClient } from '../../../adapters/api/AxiosApiClient';
+import { useApiClient } from '../../../hooks/useApiClient';
 import { getImageUrl } from '../../../utils/imageUtils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export default function EvaluationDetailPage() {
   const user = useAuthStore((state) => state.user);
@@ -42,7 +39,7 @@ export default function EvaluationDetailPage() {
   const { players, fetchPlayers } = usePlayers();
   const { generatePDF, createSharedLink, isLoading: isReportLoading, error: reportError } = useReports();
   const evaluationId = params.id as string;
-  const token = useAuthStore((state) => state.token);
+  const apiClient = useApiClient();
   const hasLoadedRef = useRef(false);
   const isPlayer = user?.role === UserRole.PLAYER;
 
@@ -65,10 +62,6 @@ export default function EvaluationDetailPage() {
       hasLoadedRef.current = true; // Marcar como cargado
       
       try {
-        if (token) {
-          apiClient.setToken(token);
-        }
-        
         await fetchPlayers();
         const evalData = await fetchEvaluationById(evaluationId);
         if (evalData) {

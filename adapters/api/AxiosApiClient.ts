@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+import { injectable } from 'tsyringe';
 import axios, { AxiosInstance } from 'axios';
 import { 
   IApiClient, 
@@ -30,12 +32,22 @@ import {
   PlayerWithoutPassword,
   GeneratePasswordResponse,
 } from '../../ports/IApiClient';
+import { IAuthClient } from '../../ports/IAuthClient';
+import { IPlayerClient } from '../../ports/IPlayerClient';
+import { IEvaluationClient } from '../../ports/IEvaluationClient';
+import { IClubClient } from '../../ports/IClubClient';
+import { ISubscriptionClient } from '../../ports/ISubscriptionClient';
+import { IReportClient } from '../../ports/IReportClient';
+import { IEvaluatorClient } from '../../ports/IEvaluatorClient';
+import { IAdminClient } from '../../ports/IAdminClient';
+import { IAuthStore } from '../../ports/IAuthStore';
 import { Player } from '../../domain/entities/Player';
 import { Evaluation } from '../../domain/entities/Evaluation';
 import { EvaluationTemplate, CreateEvaluationTemplateRequest, UpdateEvaluationTemplateRequest } from '../../domain/entities/EvaluationTemplate';
 import { User } from '../../ports/IApiClient';
 
-export class AxiosApiClient implements IApiClient {
+@injectable()
+export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, IEvaluationClient, IClubClient, ISubscriptionClient, IReportClient, IEvaluatorClient, IAdminClient {
   private client: AxiosInstance;
   private token: string | null = null;
 
@@ -63,29 +75,8 @@ export class AxiosApiClient implements IApiClient {
         if (error.response?.status === 401) {
           // Token expirado o inválido - limpiar token y redirigir al login
           this.token = null;
-          if (typeof window !== 'undefined') {
-            // Solo redirigir si estamos en el cliente
-            const authStorage = localStorage.getItem('scouta-auth-storage');
-            if (authStorage) {
-              try {
-                const parsed = JSON.parse(authStorage);
-                if (parsed.state?.token) {
-                  // Limpiar el token del store
-                  parsed.state.token = null;
-                  parsed.state.user = null;
-                  parsed.state.isAuthenticated = false;
-                  localStorage.setItem('scouta-auth-storage', JSON.stringify(parsed));
-                }
-              } catch (e) {
-                // Si hay error al parsear, simplemente limpiar
-                localStorage.removeItem('scouta-auth-storage');
-              }
-            }
-            // Redirigir al login solo si no estamos ya ahí
-            if (window.location.pathname !== '/login') {
-              window.location.href = '/login?expired=true';
-            }
-          }
+          // Usar el authStore para limpiar la autenticación y redirigir
+          this.authStore.clearAuth();
         }
         return Promise.reject(error);
       }

@@ -10,12 +10,9 @@ import { usePlayers } from '../../../use-cases/usePlayers';
 import Link from 'next/link';
 import { AppHeader } from '../../../components/AppHeader';
 import { SubscriptionBlockedBanner } from '../../../components/SubscriptionBlockedBanner';
-import { AxiosApiClient } from '../../../adapters/api/AxiosApiClient';
+import { useApiClient } from '../../../hooks/useApiClient';
 import { useAuthStore as useAuth } from '../../../store/auth-store';
 import { useMySubscription } from '../../../use-cases/useMySubscription';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 const playerSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
@@ -40,7 +37,7 @@ export default function NewPlayerPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const { createPlayer, isLoading, error } = usePlayers();
-  const token = useAuth((state) => state.token);
+  const apiClient = useApiClient();
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
@@ -200,9 +197,6 @@ export default function NewPlayerPage() {
     if (photoFile) {
       setIsUploadingPhoto(true);
       try {
-        if (token) {
-          apiClient.setToken(token);
-        }
         const uploadResponse = await apiClient.uploadPlayerPhoto(photoFile);
         if (uploadResponse.success && uploadResponse.data) {
           photoUrl = uploadResponse.data.photoUrl;

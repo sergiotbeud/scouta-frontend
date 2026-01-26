@@ -3,20 +3,16 @@
 import { useAuthStore } from '../../../store/auth-store';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { AxiosApiClient } from '../../../adapters/api/AxiosApiClient';
-import { useAuthStore as useAuth } from '../../../store/auth-store';
+import { useApiClient } from '../../../hooks/useApiClient';
 import { Player } from '../../../domain/entities/Player';
 import Link from 'next/link';
 import { ScoutaLogo } from '../../../components/ScoutaLogo';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
-
 export default function DeletedPlayersPage() {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const token = useAuth((state) => state.token);
   const router = useRouter();
+  const apiClient = useApiClient();
   const [mounted, setMounted] = useState(false);
   const [deletedPlayers, setDeletedPlayers] = useState<Player[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,13 +31,12 @@ export default function DeletedPlayersPage() {
 
   useEffect(() => {
     const fetchDeletedPlayers = async () => {
-      if (!mounted || !isAuthenticated || !token) return;
+      if (!mounted || !isAuthenticated) return;
       
       setIsLoading(true);
       setError(null);
       
       try {
-        apiClient.setToken(token);
         const response = await apiClient.getDeletedPlayers();
         if (response.success && response.data) {
           setDeletedPlayers(response.data);
@@ -58,7 +53,8 @@ export default function DeletedPlayersPage() {
     if (mounted && isAuthenticated) {
       fetchDeletedPlayers();
     }
-  }, [mounted, isAuthenticated, token]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, isAuthenticated]);
 
   const handleRestore = async (id: string) => {
     if (!confirm('¿Estás seguro de que deseas restaurar este jugador?')) {
@@ -69,9 +65,6 @@ export default function DeletedPlayersPage() {
     setError(null);
     
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
       const response = await apiClient.restorePlayer(id);
       if (response.success) {
         // Remover el jugador de la lista

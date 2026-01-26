@@ -3,15 +3,12 @@
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { AxiosApiClient } from '../../../adapters/api/AxiosApiClient';
+import { useApiClient } from '../../../hooks/useApiClient';
 import { Evaluation } from '../../../domain/entities/Evaluation';
 import { Player } from '../../../domain/entities/Player';
 import { User, UserRole } from '../../../domain/entities/User';
 import { SharedReportInfo, Club } from '../../../ports/IApiClient';
 import { useReports } from '../../../use-cases/useReports';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 import { getCategoryAverages, prepareRadarChartData } from '../../../utils/evaluationUtils';
 import { getImageUrl } from '../../../utils/imageUtils';
 
@@ -23,6 +20,7 @@ const EvaluationRadarChart = dynamic(
 
 export default function SharedReportPage() {
   const params = useParams();
+  const apiClient = useApiClient();
   const [mounted, setMounted] = useState(false);
   const token = params.token as string;
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);

@@ -3,14 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useClubs } from '../use-cases/useClubs';
 import { useSubscription } from '../use-cases/useSubscriptions';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
+import { useApiClient } from '../hooks/useApiClient';
 import { useAuthStore } from '../store/auth-store';
 import { Club, Subscription, CreateSubscriptionRequest, PlayerWithoutPassword, GeneratePasswordResponse } from '../ports/IApiClient';
 import { UserRole } from '../domain/entities/User';
 import { getImageUrl } from '../utils/imageUtils';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export function SuperAdminDashboard() {
   const { clubs, isLoading: clubsLoading, error: clubsError, fetchClubs } = useClubs();
@@ -24,6 +21,7 @@ export function SuperAdminDashboard() {
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const apiClient = useApiClient();
   const [playersWithoutPassword, setPlayersWithoutPassword] = useState<PlayerWithoutPassword[]>([]);
   const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -44,7 +42,6 @@ export function SuperAdminDashboard() {
     if (!token) return;
     setIsLoadingPlayers(true);
     try {
-      apiClient.setToken(token);
       const response = await apiClient.getPlayersWithoutPassword();
       if (response.success && response.data) {
         setPlayersWithoutPassword(response.data);
@@ -60,7 +57,6 @@ export function SuperAdminDashboard() {
     if (!token) return;
     setIsGeneratingPassword(playerId);
     try {
-      apiClient.setToken(token);
       const response = await apiClient.generatePlayerPassword(playerId);
       if (response.success && response.data) {
         setGeneratedPassword(response.data);
@@ -102,10 +98,6 @@ export function SuperAdminDashboard() {
       const adminEmail = formData.get('adminEmail') as string;
       const adminName = formData.get('adminName') as string;
       const adminPassword = formData.get('adminPassword') as string;
-
-      if (token) {
-        apiClient.setToken(token);
-      }
 
       let logoUrl: string | null = null;
 
@@ -241,10 +233,6 @@ export function SuperAdminDashboard() {
     }
 
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-
       const response = await apiClient.deleteClub(clubId, hardDelete);
       if (response.success) {
         fetchClubs();

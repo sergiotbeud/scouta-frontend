@@ -1,6 +1,14 @@
 import { Player } from '../domain/entities/Player';
 import { Evaluation } from '../domain/entities/Evaluation';
 import { EvaluationTemplate, CreateEvaluationTemplateRequest, UpdateEvaluationTemplateRequest } from '../domain/entities/EvaluationTemplate';
+import { IAuthClient } from './IAuthClient';
+import { IPlayerClient } from './IPlayerClient';
+import { IEvaluationClient } from './IEvaluationClient';
+import { IClubClient } from './IClubClient';
+import { ISubscriptionClient } from './ISubscriptionClient';
+import { IReportClient } from './IReportClient';
+import { IEvaluatorClient } from './IEvaluatorClient';
+import { IAdminClient } from './IAdminClient';
 
 export interface LoginRequest {
   email: string;
@@ -222,61 +230,23 @@ export interface UpdateSubscriptionRequest {
   endDate?: string | null;
 }
 
-export interface IApiClient {
-  login(credentials: LoginRequest): Promise<LoginResponse>;
-  changePassword(request: ChangePasswordRequest): Promise<ChangePasswordResponse>;
-  changeEmail(request: ChangeEmailRequest): Promise<ChangeEmailResponse>;
-  getPlayers(filters?: GetPlayersFilters): Promise<ApiResponse<Player[]>>;
-  getDeletedPlayers(): Promise<ApiResponse<Player[]>>;
-  getPlayerById(id: string, includeDeleted?: boolean): Promise<ApiResponse<Player>>;
-  createPlayer(player: CreatePlayerRequest): Promise<ApiResponse<Player>>;
-  updatePlayer(id: string, player: UpdatePlayerRequest): Promise<ApiResponse<Player>>;
-  deletePlayer(id: string): Promise<ApiResponse<void>>;
-  restorePlayer(id: string): Promise<ApiResponse<void>>;
-  uploadPlayerPhoto(file: File): Promise<ApiResponse<UploadPhotoResponse>>;
+import { IAuthClient } from './IAuthClient';
+import { IPlayerClient } from './IPlayerClient';
+import { IEvaluationClient } from './IEvaluationClient';
+import { IClubClient } from './IClubClient';
+import { ISubscriptionClient } from './ISubscriptionClient';
+import { IReportClient } from './IReportClient';
+import { IEvaluatorClient } from './IEvaluatorClient';
+import { IAdminClient } from './IAdminClient';
+
+/**
+ * Interfaz principal que agrupa todas las interfaces de cliente API.
+ * Mantiene compatibilidad hacia atrás mientras permite usar interfaces más específicas.
+ */
+export interface IApiClient extends IAuthClient, IPlayerClient, IEvaluationClient, IClubClient, ISubscriptionClient, IReportClient, IEvaluatorClient, IAdminClient {
+  setToken(token: string | null): void;
   uploadClubLogo(file: File): Promise<ApiResponse<UploadPhotoResponse>>;
   uploadUserPhoto(file: File): Promise<ApiResponse<UploadPhotoResponse>>;
-  // Evaluations
-  createEvaluation(evaluation: CreateEvaluationRequest): Promise<ApiResponse<Evaluation>>;
-  getEvaluations(filters?: GetEvaluationsFilters): Promise<ApiResponse<Evaluation[]>>;
-  getEvaluationById(id: string): Promise<ApiResponse<Evaluation>>;
-  getPlayerEvaluations(playerId: string, filters?: Omit<GetEvaluationsFilters, 'playerId'>): Promise<ApiResponse<Evaluation[]>>;
-  updateEvaluation(id: string, evaluation: UpdateEvaluationRequest): Promise<ApiResponse<Evaluation>>;
-  deleteEvaluation(id: string): Promise<ApiResponse<void>>;
-  // Evaluation Templates
-  createEvaluationTemplate(template: CreateEvaluationTemplateRequest): Promise<ApiResponse<EvaluationTemplate>>;
-  getEvaluationTemplates(position?: string): Promise<ApiResponse<EvaluationTemplate[]>>;
-  getEvaluationTemplateById(id: string): Promise<ApiResponse<EvaluationTemplate>>;
-  updateEvaluationTemplate(id: string, template: UpdateEvaluationTemplateRequest): Promise<ApiResponse<EvaluationTemplate>>;
-  deleteEvaluationTemplate(id: string): Promise<ApiResponse<void>>;
-  // Dashboard
-  getDashboardStats(): Promise<ApiResponse<DashboardStats | PlayerStats>>;
-  // Clubs (solo SUPER_ADMIN)
-  getClubs(): Promise<ApiResponse<Club[]>>;
-  getClubById(id: string): Promise<ApiResponse<Club>>;
-  getMyClubs(): Promise<ApiResponse<Club[]>>; // Obtener clubes del usuario actual
-  createClub(club: CreateClubRequest): Promise<ApiResponse<Club>>;
-  updateClub(id: string, club: UpdateClubRequest): Promise<ApiResponse<Club>>;
-  deleteClub(id: string): Promise<ApiResponse<void>>;
-  // Subscriptions
-  getSubscriptionByClubId(clubId: string): Promise<ApiResponse<Subscription>>;
-  getMySubscription(): Promise<ApiResponse<Subscription>>; // Para ADMIN obtener su propia suscripción
-  createSubscription(clubId: string, subscription: CreateSubscriptionRequest): Promise<ApiResponse<Subscription>>;
-  updateSubscription(clubId: string, subscription: UpdateSubscriptionRequest): Promise<ApiResponse<Subscription>>;
-  // Evaluators (solo ADMIN)
-  getEvaluators(): Promise<ApiResponse<User[]>>;
-  getEvaluatorById(id: string): Promise<ApiResponse<User>>;
-  createEvaluator(evaluator: CreateEvaluatorRequest): Promise<ApiResponse<User>>;
-  updateEvaluator(id: string, evaluator: UpdateEvaluatorRequest): Promise<ApiResponse<User>>;
-  deleteEvaluator(id: string): Promise<ApiResponse<void>>;
-  // Reports
-  generateEvaluationPDF(evaluationId: string): Promise<{ blob: Blob; filename: string }>;
-  createSharedReport(evaluationId: string, options?: { expiresInDays?: number; maxViews?: number }): Promise<ApiResponse<SharedReport>>;
-  getSharedReport(token: string): Promise<ApiResponse<{ evaluation: Evaluation; player?: Player | null; evaluator?: User | null; club?: Club | null; sharedReport: SharedReportInfo }>>;
-  generateSharedReportPDF(token: string): Promise<{ blob: Blob; filename: string }>;
-  // Admin (solo SUPER_ADMIN)
-  getPlayersWithoutPassword(): Promise<ApiResponse<PlayerWithoutPassword[]>>;
-  generatePlayerPassword(playerId: string): Promise<ApiResponse<GeneratePasswordResponse>>;
 }
 
 export interface CreateSubscriptionRequest {

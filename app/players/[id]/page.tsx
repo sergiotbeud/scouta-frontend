@@ -5,23 +5,19 @@ import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
 import { usePlayers } from '../../../use-cases/usePlayers';
 import { useEvaluations } from '../../../use-cases/useEvaluations';
+import { useApiClient } from '../../../hooks/useApiClient';
 import Link from 'next/link';
-import { AxiosApiClient } from '../../../adapters/api/AxiosApiClient';
-import { useAuthStore as useAuth } from '../../../store/auth-store';
 import { Player } from '../../../domain/entities/Player';
 import { Evaluation } from '../../../domain/entities/Evaluation';
 import { AppHeader } from '../../../components/AppHeader';
 import { getImageUrl } from '../../../utils/imageUtils';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
-
 export default function PlayerDetailPage() {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const token = useAuth((state) => state.token);
   const router = useRouter();
   const params = useParams();
+  const apiClient = useApiClient();
   const [mounted, setMounted] = useState(false);
   const [player, setPlayer] = useState<Player | null>(null);
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
@@ -52,10 +48,6 @@ export default function PlayerDetailPage() {
       setError(null);
       
       try {
-        if (token) {
-          apiClient.setToken(token);
-        }
-        
         // Cargar jugador
         const playerResponse = await apiClient.getPlayerById(playerId);
         if (playerResponse.success && playerResponse.data) {

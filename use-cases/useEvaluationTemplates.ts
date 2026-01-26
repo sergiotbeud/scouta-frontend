@@ -1,66 +1,30 @@
-import { useState, useEffect } from 'react';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
-import { useAuthStore } from '../store/auth-store';
+import { useState } from 'react';
+import { useEvaluationClient } from '../hooks/useEvaluationClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { EvaluationTemplate, CreateEvaluationTemplateRequest, UpdateEvaluationTemplateRequest } from '../domain/entities/EvaluationTemplate';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export function useEvaluationTemplates() {
   const [templates, setTemplates] = useState<EvaluationTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const token = useAuthStore((state) => state.token);
-
-  useEffect(() => {
-    if (token) {
-      apiClient.setToken(token);
-    }
-  }, [token]);
+  const evaluationClient = useEvaluationClient();
+  const { handleError } = useErrorHandler();
 
   const fetchTemplates = async (position?: string): Promise<void> => {
     setIsLoading(true);
     setError(null);
     try {
-      // Asegurar que el token esté configurado antes de hacer la petición
-      if (!token) {
-        const errorMsg = 'No hay token de autenticación. Por favor, inicia sesión nuevamente.';
-        setError(errorMsg);
-        setIsLoading(false);
-        if (process.env.NODE_ENV === 'development') {
-          console.error('❌ fetchTemplates - No token disponible');
-        }
-        return;
-      }
-      
-      // Configurar el token justo antes de hacer la petición
-      apiClient.setToken(token);
-      const response = await apiClient.getEvaluationTemplates(position);
+      // El token se configura automáticamente en useEvaluationClient
+      const response = await evaluationClient.getEvaluationTemplates(position);
       if (response.success && response.data) {
         setTemplates(response.data);
       } else {
         const errorMessage = response.error || 'Error al cargar templates';
         setError(errorMessage);
       }
-    } catch (err: any) {
-      let errorMessage = 'Error al cargar templates';
-      if (err.response?.status === 401) {
-        errorMessage = 'Sesión expirada. Por favor, inicia sesión nuevamente.';
-        // Si el token expiró, podría ser útil limpiar el token del store
-        // pero eso lo manejará el componente de login
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al cargar templates');
       setError(errorMessage);
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Error en fetchTemplates (catch):', {
-          message: err.message,
-          response: err.response?.data,
-          status: err.response?.status,
-          hasToken: !!token,
-          error: err
-        });
-      }
     } finally {
       setIsLoading(false);
     }
@@ -70,10 +34,7 @@ export function useEvaluationTemplates() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.createEvaluationTemplate(template);
+      const response = await evaluationClient.createEvaluationTemplate(template);
       if (response.success && response.data) {
         setTemplates(prev => [response.data!, ...prev]);
         return response.data;
@@ -81,8 +42,9 @@ export function useEvaluationTemplates() {
         setError(response.error || 'Error al crear template');
         return null;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al crear template');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al crear template');
+      setError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -93,10 +55,7 @@ export function useEvaluationTemplates() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.updateEvaluationTemplate(id, template);
+      const response = await evaluationClient.updateEvaluationTemplate(id, template);
       if (response.success && response.data) {
         setTemplates(prev => prev.map(t => t.id === id ? response.data! : t));
         return response.data;
@@ -116,10 +75,7 @@ export function useEvaluationTemplates() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.deleteEvaluationTemplate(id);
+      const response = await evaluationClient.deleteEvaluationTemplate(id);
       if (response.success) {
         setTemplates(prev => prev.filter(t => t.id !== id));
         return true;
@@ -127,8 +83,9 @@ export function useEvaluationTemplates() {
         setError(response.error || 'Error al eliminar template');
         return false;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al eliminar template');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al eliminar template');
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);

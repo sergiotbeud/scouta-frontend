@@ -6,24 +6,21 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { AppHeader } from '../../components/AppHeader';
 import { ChangePasswordModal } from '../../components/auth/ChangePasswordModal';
+import { useApiClient } from '../../hooks/useApiClient';
 import { getImageUrl } from '../../utils/imageUtils';
-import { AxiosApiClient } from '../../adapters/api/AxiosApiClient';
 import { UserRole } from '../../domain/entities/User';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const setAuth = useAuthStore((state) => state.setAuth);
   const router = useRouter();
+  const apiClient = useApiClient();
   const [mounted, setMounted] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const token = useAuthStore((state) => state.token);
-  const apiClient = new AxiosApiClient(API_URL);
   const isPlayer = user?.role === UserRole.PLAYER;
 
   useEffect(() => {
@@ -35,12 +32,6 @@ export default function ProfilePage() {
       router.push('/login');
     }
   }, [mounted, isAuthenticated, router]);
-
-  useEffect(() => {
-    if (token) {
-      apiClient.setToken(token);
-    }
-  }, [token]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,15 +46,17 @@ export default function ProfilePage() {
   };
 
   const handleUploadPhoto = async () => {
-    if (!photoFile || !token) return;
+    if (!photoFile) return;
     
     setIsUploadingPhoto(true);
     try {
-      apiClient.setToken(token);
+      const token = useAuthStore.getState().token;
       const response = await apiClient.uploadUserPhoto(photoFile);
       if (response.success && response.data) {
         const updatedUser = { ...user!, photoUrl: response.data.photoUrl };
-        setAuth(updatedUser, token);
+        if (token) {
+          setAuth(updatedUser, token);
+        }
         setPhotoFile(null);
         setPhotoPreview(null);
         alert('Foto actualizada correctamente');

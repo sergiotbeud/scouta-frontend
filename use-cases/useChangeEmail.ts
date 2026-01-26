@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
+import { useAuthClient } from '../hooks/useAuthClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { useAuthStore } from '../store/auth-store';
 import { User } from '../domain/entities/User';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 interface UseChangeEmailReturn {
   changeEmail: (newEmail: string) => Promise<boolean>;
@@ -19,17 +17,15 @@ export function useChangeEmail(): UseChangeEmailReturn {
   const router = useRouter();
   const token = useAuthStore((state) => state.token);
   const setAuth = useAuthStore((state) => state.setAuth);
+  const authClient = useAuthClient();
+  const { handleError } = useErrorHandler();
 
   const changeEmail = async (newEmail: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-
-      const response = await apiClient.changeEmail({
+      const response = await authClient.changeEmail({
         newEmail,
       });
 
@@ -48,13 +44,8 @@ export function useChangeEmail(): UseChangeEmailReturn {
         setError(response.error || 'Error al cambiar el email');
         throw new Error(response.error || 'Error al cambiar el email');
       }
-    } catch (err: any) {
-      let errorMessage = 'Error al conectar con el servidor';
-      if (err?.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al cambiar el email');
       setError(errorMessage);
       throw err; // Re-lanzar el error para que el componente pueda manejarlo
     } finally {

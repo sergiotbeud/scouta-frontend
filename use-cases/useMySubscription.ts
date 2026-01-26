@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
+import { useSubscriptionClient } from '../hooks/useSubscriptionClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { useAuthStore } from '../store/auth-store';
 import { Subscription } from '../ports/IApiClient';
 import { UserRole } from '../domain/entities/User';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export function useMySubscription() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
@@ -13,6 +11,8 @@ export function useMySubscription() {
   const [error, setError] = useState<string | null>(null);
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const subscriptionClient = useSubscriptionClient();
+  const { handleError } = useErrorHandler();
 
   useEffect(() => {
     // ADMIN y EVALUATOR pueden ver la suscripción de su club
@@ -29,10 +29,7 @@ export function useMySubscription() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.getMySubscription();
+      const response = await subscriptionClient.getMySubscription();
       if (response.success && response.data) {
         setSubscription(response.data);
         setError(null);
@@ -45,13 +42,17 @@ export function useMySubscription() {
           setSubscription(null);
         }
       }
-    } catch (err: any) {
-      if (err.response?.status === 404) {
-        setSubscription(null);
-        setError(null);
-      } else {
-        setError(err.message || 'Error al cargar suscripción');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosError = err as any;
+        if (axiosError.response?.status === 404) {
+          setSubscription(null);
+          setError(null);
+          return;
+        }
       }
+      const errorMessage = handleError(err, 'Error al cargar suscripción');
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -1,33 +1,22 @@
-import { useState, useEffect } from 'react';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
-import { useAuthStore } from '../store/auth-store';
+import { useState } from 'react';
+import { usePlayerClient } from '../hooks/usePlayerClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { Player } from '../domain/entities/Player';
 import { CreatePlayerRequest, UpdatePlayerRequest, GetPlayersFilters } from '../ports/IApiClient';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export function usePlayers() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const token = useAuthStore((state) => state.token);
-
-  useEffect(() => {
-    if (token) {
-      apiClient.setToken(token);
-    }
-  }, [token]);
+  const playerClient = usePlayerClient();
+  const { handleError } = useErrorHandler();
 
   const fetchPlayers = async (filters?: GetPlayersFilters) => {
     setIsLoading(true);
     setError(null);
     try {
-      // Asegurar que el token esté configurado antes de hacer la petición
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.getPlayers(filters);
+      // El token se configura automáticamente en usePlayerClient
+      const response = await playerClient.getPlayers(filters);
       if (response.success && response.data) {
         setPlayers(response.data);
       } else {
@@ -37,26 +26,9 @@ export function usePlayers() {
           console.error('❌ Error en fetchPlayers:', response);
         }
       }
-    } catch (err: any) {
-      let errorMessage = 'Error al cargar jugadores';
-      
-      if (err.message) {
-        errorMessage = err.message;
-      } else if (err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err.request) {
-        errorMessage = 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo en http://localhost:3000';
-      }
-      
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al cargar jugadores');
       setError(errorMessage);
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Error en fetchPlayers (catch):', {
-          message: err.message,
-          response: err.response?.data,
-          request: err.request,
-          error: err
-        });
-      }
     } finally {
       setIsLoading(false);
     }
@@ -66,46 +38,21 @@ export function usePlayers() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await apiClient.createPlayer(playerData);
+      const response = await playerClient.createPlayer(playerData);
       if (response.success && response.data) {
         await fetchPlayers();
         return response.data;
       } else {
-        // Extraer detalles de validación si existen
-        let errorMessage = response.error || 'Error al crear jugador';
-        if (response.details && Array.isArray(response.details)) {
-          const validationErrors = response.details.map((detail: any) => 
-            `${detail.path?.join('.') || 'campo'}: ${detail.message}`
-          ).join(', ');
-          errorMessage = `Error de validación: ${validationErrors}`;
-        }
+        const errorMessage = response.error || 'Error al crear jugador';
         setError(errorMessage);
         if (process.env.NODE_ENV === 'development') {
           console.error('❌ Error en createPlayer:', response);
         }
         return null;
       }
-    } catch (err: any) {
-      let errorMessage = 'Error al crear jugador';
-      if (err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-        if (err.response.data.details && Array.isArray(err.response.data.details)) {
-          const validationErrors = err.response.data.details.map((detail: any) => 
-            `${detail.path?.join('.') || 'campo'}: ${detail.message}`
-          ).join(', ');
-          errorMessage = `Error de validación: ${validationErrors}`;
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al crear jugador');
       setError(errorMessage);
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Error en createPlayer (catch):', {
-          message: err.message,
-          response: err.response?.data,
-          error: err
-        });
-      }
       return null;
     } finally {
       setIsLoading(false);
@@ -116,7 +63,7 @@ export function usePlayers() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await apiClient.updatePlayer(id, playerData);
+      const response = await playerClient.updatePlayer(id, playerData);
       if (response.success && response.data) {
         await fetchPlayers();
         return response.data;
@@ -124,8 +71,9 @@ export function usePlayers() {
         setError(response.error || 'Error al actualizar jugador');
         return null;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al actualizar jugador');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al actualizar jugador');
+      setError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);
@@ -136,7 +84,7 @@ export function usePlayers() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await apiClient.deletePlayer(id);
+      const response = await playerClient.deletePlayer(id);
       if (response.success) {
         await fetchPlayers();
         return true;
@@ -144,8 +92,9 @@ export function usePlayers() {
         setError(response.error || 'Error al eliminar jugador');
         return false;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al eliminar jugador');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al eliminar jugador');
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -156,10 +105,7 @@ export function usePlayers() {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.getDeletedPlayers();
+      const response = await playerClient.getDeletedPlayers();
       if (response.success && response.data) {
         return response.data;
       } else {
@@ -167,8 +113,8 @@ export function usePlayers() {
         setError(errorMessage);
         return [];
       }
-    } catch (err: any) {
-      const errorMessage = err.message || 'Error al cargar jugadores eliminados';
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al cargar jugadores eliminados');
       setError(errorMessage);
       return [];
     } finally {
@@ -180,7 +126,7 @@ export function usePlayers() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await apiClient.restorePlayer(id);
+      const response = await playerClient.restorePlayer(id);
       if (response.success) {
         await fetchPlayers();
         return true;
@@ -188,8 +134,9 @@ export function usePlayers() {
         setError(response.error || 'Error al restaurar jugador');
         return false;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al restaurar jugador');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al restaurar jugador');
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);

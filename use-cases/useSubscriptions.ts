@@ -1,20 +1,18 @@
 import { useState, useEffect } from 'react';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
-import { useAuthStore } from '../store/auth-store';
+import { useSubscriptionClient } from '../hooks/useSubscriptionClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { Subscription, CreateSubscriptionRequest, UpdateSubscriptionRequest } from '../ports/IApiClient';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 export function useSubscription(clubId: string) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const token = useAuthStore((state) => state.token);
+  const subscriptionClient = useSubscriptionClient();
+  const { handleError } = useErrorHandler();
 
   // Cargar suscripción automáticamente cuando cambia el clubId
   useEffect(() => {
-    if (clubId && token) {
+    if (clubId) {
       fetchSubscription();
     } else {
       // Si no hay clubId, limpiar la suscripción
@@ -22,7 +20,7 @@ export function useSubscription(clubId: string) {
       setError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clubId, token]);
+  }, [clubId]);
 
   const fetchSubscription = async (): Promise<void> => {
     if (!clubId) return;
@@ -30,10 +28,7 @@ export function useSubscription(clubId: string) {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.getSubscriptionByClubId(clubId);
+      const response = await subscriptionClient.getSubscriptionByClubId(clubId);
       if (response.success && response.data) {
         setSubscription(response.data);
         setError(null); // Limpiar cualquier error previo
@@ -65,10 +60,7 @@ export function useSubscription(clubId: string) {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.createSubscription(clubId, data);
+      const response = await subscriptionClient.createSubscription(clubId, data);
       if (response.success && response.data) {
         setSubscription(response.data);
         return true;
@@ -76,8 +68,9 @@ export function useSubscription(clubId: string) {
         setError(response.error || 'Error al crear suscripción');
         return false;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al crear suscripción');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al crear suscripción');
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -90,10 +83,7 @@ export function useSubscription(clubId: string) {
     setIsLoading(true);
     setError(null);
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-      const response = await apiClient.updateSubscription(clubId, data);
+      const response = await subscriptionClient.updateSubscription(clubId, data);
       if (response.success && response.data) {
         setSubscription(response.data);
         return true;
@@ -101,8 +91,9 @@ export function useSubscription(clubId: string) {
         setError(response.error || 'Error al actualizar suscripción');
         return false;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al actualizar suscripción');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al actualizar suscripción');
+      setError(errorMessage);
       return false;
     } finally {
       setIsLoading(false);

@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { AxiosApiClient } from '../adapters/api/AxiosApiClient';
 import { useRouter } from 'next/navigation';
+import { useAuthClient } from '../hooks/useAuthClient';
+import { useErrorHandler } from '../hooks/useErrorHandler';
 import { useAuthStore } from '../store/auth-store';
 import { User } from '../domain/entities/User';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-const apiClient = new AxiosApiClient(API_URL);
 
 interface UseChangePasswordReturn {
   changePassword: (currentPassword: string | undefined, newPassword: string) => Promise<void>;
@@ -18,17 +16,15 @@ export function useChangePassword(): UseChangePasswordReturn {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const token = useAuthStore((state) => state.token);
+  const authClient = useAuthClient();
+  const { handleError } = useErrorHandler();
 
   const changePassword = async (currentPassword: string | undefined, newPassword: string) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      if (token) {
-        apiClient.setToken(token);
-      }
-
-      const response = await apiClient.changePassword({
+      const response = await authClient.changePassword({
         currentPassword,
         newPassword,
       });
@@ -48,13 +44,8 @@ export function useChangePassword(): UseChangePasswordReturn {
         setError(response.error || 'Error al cambiar la contraseña');
         throw new Error(response.error || 'Error al cambiar la contraseña');
       }
-    } catch (err: any) {
-      let errorMessage = 'Error al conectar con el servidor';
-      if (err?.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al cambiar la contraseña');
       setError(errorMessage);
       throw err; // Re-lanzar el error para que el componente pueda manejarlo
     } finally {
