@@ -41,8 +41,8 @@ export function useEvaluations() {
         // Normalizar los items de todas las evaluaciones
         const normalizedEvaluations = response.data.map(evaluation => ({
           ...evaluation,
-          items: normalizeEvaluationItems(evaluation.items || []),
-        }));
+          items: normalizeEvaluationItems(evaluation.items || []) as Evaluation['items'],
+        })) as Evaluation[];
         setEvaluations(normalizedEvaluations);
       } else {
         setError(response.error || 'Error al cargar evaluaciones');
@@ -65,8 +65,8 @@ export function useEvaluations() {
         // Normalizar los items de todas las evaluaciones
         const normalizedEvaluations = response.data.map(evaluation => ({
           ...evaluation,
-          items: normalizeEvaluationItems(evaluation.items || []),
-        }));
+          items: normalizeEvaluationItems(evaluation.items || []) as Evaluation['items'],
+        })) as Evaluation[];
         setEvaluations(normalizedEvaluations);
         return normalizedEvaluations;
       } else {
@@ -92,8 +92,8 @@ export function useEvaluations() {
         // Normalizar los items si vienen con estructura {props: {...}}
         const normalizedData = {
           ...response.data,
-          items: normalizeEvaluationItems(response.data.items || []),
-        };
+          items: normalizeEvaluationItems(response.data.items || []) as Evaluation['items'],
+        } as Evaluation;
         return normalizedData;
       } else {
         setError(response.error || 'Error al cargar evaluación');
@@ -139,10 +139,10 @@ export function useEvaluations() {
         // Normalizar los items si vienen con estructura {props: {...}}
         const normalizedData = {
           ...response.data,
-          items: normalizeEvaluationItems(response.data.items || []),
-        };
+          items: normalizeEvaluationItems(response.data.items || []) as Evaluation['items'],
+        } as Evaluation;
         // Actualizar en la lista local
-        setEvaluations(prev => prev.map(e => e.id === id ? normalizedData : e));
+        setEvaluations(prev => prev.map(e => e.id === id ? normalizedData : e) as Evaluation[]);
         return normalizedData;
       } else {
         setError(response.error || 'Error al actualizar evaluación');

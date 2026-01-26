@@ -10,6 +10,9 @@ import { IReportClient } from './IReportClient';
 import { IEvaluatorClient } from './IEvaluatorClient';
 import { IAdminClient } from './IAdminClient';
 
+// Re-exportar tipos del dominio para facilitar imports
+export type { Evaluation, Player, EvaluationTemplate, CreateEvaluationTemplateRequest, UpdateEvaluationTemplateRequest };
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -230,15 +233,6 @@ export interface UpdateSubscriptionRequest {
   maxEvaluators?: number;
   endDate?: string | null;
 }
-
-import { IAuthClient } from './IAuthClient';
-import { IPlayerClient } from './IPlayerClient';
-import { IEvaluationClient } from './IEvaluationClient';
-import { IClubClient } from './IClubClient';
-import { ISubscriptionClient } from './ISubscriptionClient';
-import { IReportClient } from './IReportClient';
-import { IEvaluatorClient } from './IEvaluatorClient';
-import { IAdminClient } from './IAdminClient';
 
 /**
  * Interfaz principal que agrupa todas las interfaces de cliente API.
