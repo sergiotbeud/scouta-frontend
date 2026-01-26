@@ -115,7 +115,7 @@ export default function EvaluationTemplatesPage() {
     ],
   };
 
-  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico'];
+  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico', 'vad', 'vao'];
   const categoryLabels: Record<EvaluationItemCategory, string> = {
     'técnico': 'Técnico',
     'táctico': 'Táctico',
@@ -123,6 +123,8 @@ export default function EvaluationTemplatesPage() {
     'cognitivo': 'Cognitivo',
     'psicológico': 'Psicológico',
     'biomédico': 'Biomédico',
+    'vad': 'VAD (Video Análisis Defensivo)',
+    'vao': 'VAO (Vídeo Análisis Ofensivo)',
   };
 
   useEffect(() => {

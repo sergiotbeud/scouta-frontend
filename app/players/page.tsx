@@ -134,8 +134,8 @@ export default function PlayersPage() {
           ]}
         />
 
-        {/* Error Message */}
-        {error && (
+        {/* Error Message - Solo mostrar si no está cargando */}
+        {error && !isLoading && (
           <div className="mb-6 bg-error/20 border border-error/30 text-error-light px-4 py-3 rounded-xl flex items-center gap-2">
             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

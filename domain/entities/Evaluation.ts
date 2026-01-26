@@ -2,7 +2,7 @@ import { Player } from './Player';
 import { User } from './User';
 
 export type EvaluationItemDataType = 'numeric' | 'percentage' | 'scale_1_5' | 'scale_1_10' | 'index' | 'coordinate';
-export type EvaluationItemCategory = 'técnico' | 'táctico' | 'físico' | 'cognitivo' | 'psicológico' | 'biomédico';
+export type EvaluationItemCategory = 'técnico' | 'táctico' | 'físico' | 'cognitivo' | 'psicológico' | 'biomédico' | 'vad' | 'vao';
 
 export interface EvaluationItem {
   id: string;

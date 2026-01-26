@@ -47,7 +47,7 @@ export const PlayerSchema = z.object({
 export const EvaluationItemSchema = z.object({
   id: z.string(),
   evaluationId: z.string(),
-  category: z.enum(['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico']),
+  category: z.enum(['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico', 'vad', 'vao']),
   itemName: z.string(),
   value: z.unknown(), // Puede ser number, string, object, etc.
   dataType: z.enum(['numeric', 'percentage', 'scale_1_5', 'scale_1_10', 'index', 'coordinate']),

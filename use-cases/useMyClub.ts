@@ -9,6 +9,7 @@ export function useMyClub() {
   const [club, setClub] = useState<Club | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasInitialLoadCompleted, setHasInitialLoadCompleted] = useState(false);
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const clubClient = useClubClient();
@@ -18,12 +19,14 @@ export function useMyClub() {
     const fetchMyClub = async () => {
       if (!token || !user) {
         setIsLoading(false);
+        setHasInitialLoadCompleted(true);
         return;
       }
 
       // Solo obtener club si el usuario no es SUPER_ADMIN
       if (user.role === UserRole.SUPER_ADMIN || user.role === UserRole.PLAYER) {
         setIsLoading(false);
+        setHasInitialLoadCompleted(true);
         return;
       }
 
@@ -41,15 +44,20 @@ export function useMyClub() {
           setClub(null);
         }
       } catch (err: unknown) {
-        const errorMessage = handleError(err, 'Error al cargar información del club');
-        setError(errorMessage);
+        // Solo establecer error después de la carga inicial
+        if (hasInitialLoadCompleted) {
+          const errorMessage = handleError(err, 'Error al cargar información del club');
+          setError(errorMessage);
+        }
         setClub(null);
       } finally {
         setIsLoading(false);
+        setHasInitialLoadCompleted(true);
       }
     };
 
     fetchMyClub();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, user]);
 
   return { club, isLoading, error };

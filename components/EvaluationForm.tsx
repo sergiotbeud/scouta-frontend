@@ -243,6 +243,8 @@ const evaluationItems: Record<EvaluationItemCategory, string[]> = {
     'Carga Semanal Total',
     'Carga Acumulada',
   ],
+  'vad': [], // Video Análisis Defensivo - Sin items predefinidos
+  'vao': [], // Vídeo Análisis Ofensivo - Sin items predefinidos
 };
 
 export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoading, error, initialData }: EvaluationFormProps) {
@@ -257,6 +259,8 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
     'cognitivo': [],
     'psicológico': [],
     'biomédico': [],
+    'vad': [],
+    'vao': [],
   });
   // Estado para items ocultos (no se incluirán en la evaluación)
   const [hiddenItems, setHiddenItems] = useState<Record<EvaluationItemCategory, string[]>>({
@@ -266,6 +270,8 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
     'cognitivo': [],
     'psicológico': [],
     'biomédico': [],
+    'vad': [],
+    'vao': [],
   });
   const [newItemInput, setNewItemInput] = useState<string>('');
   const { templates, fetchTemplates, createTemplate } = useEvaluationTemplates();
@@ -311,6 +317,8 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
           'cognitivo': [],
           'psicológico': [],
           'biomédico': [],
+          'vad': [],
+          'vao': [],
         };
         const newAvailableItems: Record<EvaluationItemCategory, string[]> = {
           'técnico': [...evaluationItems['técnico']],
@@ -319,6 +327,8 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
           'cognitivo': [...evaluationItems['cognitivo']],
           'psicológico': [...evaluationItems['psicológico']],
           'biomédico': [...evaluationItems['biomédico']],
+          'vad': [...evaluationItems['vad']],
+          'vao': [...evaluationItems['vao']],
         };
         
         // Crear un Set con los itemNames que SÍ están en la evaluación guardada
@@ -357,6 +367,8 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
           'cognitivo': [],
           'psicológico': [],
           'biomédico': [],
+          'vad': [],
+          'vao': [],
         };
         
         // Para cada categoría, encontrar items que están disponibles pero no fueron guardados
@@ -420,6 +432,8 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
           'cognitivo': [],
           'psicológico': [],
           'biomédico': [],
+          'vad': [],
+          'vao': [],
         };
         
         template.items.forEach(item => {
@@ -436,6 +450,8 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
           'cognitivo': [],
           'psicológico': [],
           'biomédico': [],
+          'vad': [],
+          'vao': [],
         });
         setHiddenItems({
           'técnico': [],
@@ -444,6 +460,8 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
           'cognitivo': [],
           'psicológico': [],
           'biomédico': [],
+          'vad': [],
+          'vao': [],
         });
       }
     } else {
@@ -532,7 +550,7 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
     }
   };
 
-  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico'];
+  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico', 'vad', 'vao'];
   const categoryLabels: Record<EvaluationItemCategory, string> = {
     'técnico': 'Técnico',
     'táctico': 'Táctico',
@@ -540,6 +558,8 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
     'cognitivo': 'Cognitivo',
     'psicológico': 'Psicológico',
     'biomédico': 'Biomédico',
+    'vad': 'VAD (Video Análisis Defensivo)',
+    'vao': 'VAO (Vídeo Análisis Ofensivo)',
   };
 
   const handleItemChange = (itemName: string, value: number) => {
@@ -685,7 +705,7 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
         <label className="block text-sm font-medium text-white mb-3">
           Categoría de Evaluación
         </label>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-2">
           {categories.map((category) => (
             <button
               key={category}

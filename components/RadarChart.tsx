@@ -59,6 +59,10 @@ export function EvaluationRadarChart({ data, comparisonData, maxValue = 5 }: Rad
     };
   });
 
+  // Determinar tamaño de fuente según número de categorías
+  const categoryCount = data.length;
+  const tickFontSize = categoryCount > 6 ? 10 : 12;
+
   if (!mounted) {
     return (
       <div className="w-full h-96 flex items-center justify-center bg-dark-elevated rounded-xl">
@@ -77,7 +81,7 @@ export function EvaluationRadarChart({ data, comparisonData, maxValue = 5 }: Rad
           <PolarGrid stroke="#374151" />
           <PolarAngleAxis
             dataKey="category"
-            tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 500 }}
+            tick={{ fill: '#9CA3AF', fontSize: tickFontSize, fontWeight: 500 }}
             className="text-dark-text-secondary"
           />
           <PolarRadiusAxis

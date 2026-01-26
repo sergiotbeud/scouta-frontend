@@ -67,6 +67,7 @@ export interface CreatePlayerRequest {
   name: string;
   positions: string[]; // Array de posiciones
   age: number;
+  password: string; // Contraseña obligatoria para el jugador
   userId?: string | null;
   photoUrl?: string | null;
   height?: number | null;

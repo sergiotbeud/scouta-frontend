@@ -134,6 +134,8 @@ export default function SharedReportPage() {
     'cognitivo': 'Cognitivo',
     'psicológico': 'Psicológico',
     'biomédico': 'Biomédico',
+    'vad': 'VAD (Video Análisis Defensivo)',
+    'vao': 'VAO (Vídeo Análisis Ofensivo)',
   };
 
   const categories = Object.keys(categoryLabels);

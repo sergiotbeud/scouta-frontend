@@ -10,6 +10,7 @@ export function useMySubscription() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasInitialLoadCompleted, setHasInitialLoadCompleted] = useState(false);
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
   const subscriptionClient = useSubscriptionClient();
@@ -22,6 +23,7 @@ export function useMySubscription() {
     } else {
       setSubscription(null);
       setError(null);
+      setHasInitialLoadCompleted(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, user]);
@@ -39,7 +41,10 @@ export function useMySubscription() {
           setSubscription(null);
           setError(null);
         } else {
-          setError(response.error || 'Error al cargar suscripción');
+          // Solo establecer error después de la carga inicial
+          if (hasInitialLoadCompleted) {
+            setError(response.error || 'Error al cargar suscripción');
+          }
           setSubscription(null);
         }
       }
@@ -47,12 +52,16 @@ export function useMySubscription() {
       if (isAxiosError(err) && err.response?.status === 404) {
         setSubscription(null);
         setError(null);
-        return;
+      } else {
+        // Solo establecer error después de la carga inicial
+        if (hasInitialLoadCompleted) {
+          const errorMessage = handleError(err, 'Error al cargar suscripción');
+          setError(errorMessage);
+        }
       }
-      const errorMessage = handleError(err, 'Error al cargar suscripción');
-      setError(errorMessage);
     } finally {
       setIsLoading(false);
+      setHasInitialLoadCompleted(true);
     }
   };
 

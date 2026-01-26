@@ -23,6 +23,7 @@ export default function EvaluationsPage() {
   const [mounted, setMounted] = useState(false);
   const { evaluations, isLoading, error, fetchEvaluations, deleteEvaluation } = useEvaluations();
   const { players, fetchPlayers } = usePlayers();
+  const apiClient = useApiClient();
   const [filters, setFilters] = useState<GetEvaluationsFilters>({});
   const { subscription } = useMySubscription();
   const isSubscriptionActive = subscription?.status === 'ACTIVE';
@@ -418,8 +419,8 @@ export default function EvaluationsPage() {
           </div>
         )}
 
-        {/* Error */}
-        {error && (
+        {/* Error - Solo mostrar si no está cargando */}
+        {error && !isLoading && (
           <div className="mb-6 bg-error/20 border border-error/30 text-error-light px-4 py-3 rounded-xl">
             {error}
           </div>

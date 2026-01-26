@@ -86,7 +86,7 @@ export function calculateCategoryAverage(evaluation: Evaluation, category: Evalu
 }
 
 export function getCategoryAverages(evaluation: Evaluation): Record<EvaluationItemCategory, number | null> {
-  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico'];
+  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico', 'vad', 'vao'];
   const averages: Record<string, number | null> = {};
   
   categories.forEach(category => {
@@ -97,7 +97,7 @@ export function getCategoryAverages(evaluation: Evaluation): Record<EvaluationIt
 }
 
 export function prepareRadarChartData(evaluation: Evaluation, previousEvaluation?: Evaluation) {
-  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico'];
+  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico', 'vad', 'vao'];
   const categoryLabels: Record<EvaluationItemCategory, string> = {
     'técnico': 'Técnico',
     'táctico': 'Táctico',
@@ -105,6 +105,8 @@ export function prepareRadarChartData(evaluation: Evaluation, previousEvaluation
     'cognitivo': 'Cognitivo',
     'psicológico': 'Psicológico',
     'biomédico': 'Biomédico',
+    'vad': 'VAD',
+    'vao': 'VAO',
   };
 
   const currentAverages = getCategoryAverages(evaluation);
@@ -131,7 +133,7 @@ export function calculateStrengthsAndWeaknesses(evaluation: Evaluation): {
   weaknesses: { category: EvaluationItemCategory; average: number }[];
 } {
   const averages = getCategoryAverages(evaluation);
-  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico'];
+  const categories: EvaluationItemCategory[] = ['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico', 'vad', 'vao'];
   
   const categoryAverages = categories
     .map(category => ({

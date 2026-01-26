@@ -187,6 +187,8 @@ export default function EvaluationDetailPage() {
     'cognitivo': 'Cognitivo',
     'psicológico': 'Psicológico',
     'biomédico': 'Biomédico',
+    'vad': 'VAD (Video Análisis Defensivo)',
+    'vao': 'VAO (Vídeo Análisis Ofensivo)',
   };
 
   const getItemsByCategory = (category: string) => {
@@ -378,12 +380,11 @@ export default function EvaluationDetailPage() {
                 previousEvaluation && previousEvaluation.id !== evaluation.id ? previousEvaluation : undefined
               );
               
-              const filteredData = data.filter(d => d.value > 0);
-              const filteredComparison = previousEvaluation && previousEvaluation.id !== evaluation.id 
-                ? comparisonData?.filter(d => d.value > 0)
-                : undefined;
+              // Mostrar todas las categorías, incluso si tienen valor 0 (para que el gráfico radar muestre todos los ejes)
+              // Solo filtrar si realmente no hay ninguna categoría con datos
+              const hasAnyData = data.some(d => d.value > 0);
               
-              if (filteredData.length === 0) {
+              if (!hasAnyData) {
                 return (
                   <div className="bg-dark-elevated rounded-xl p-4 text-center text-dark-text-secondary">
                     <p>No hay datos suficientes para mostrar el gráfico</p>
@@ -398,8 +399,8 @@ export default function EvaluationDetailPage() {
               return (
                 <div className="bg-dark-elevated rounded-xl p-4">
                   <EvaluationRadarChart 
-                    data={filteredData} 
-                    comparisonData={filteredComparison} 
+                    data={data} 
+                    comparisonData={comparisonData} 
                     maxValue={5} 
                   />
                 </div>
@@ -655,7 +656,7 @@ export default function EvaluationDetailPage() {
 
         {/* Items por categoría */}
         <div className="space-y-6">
-          {['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico'].map((category) => {
+          {['técnico', 'táctico', 'físico', 'cognitivo', 'psicológico', 'biomédico', 'vad', 'vao'].map((category) => {
             const items = getItemsByCategory(category);
             if (items.length === 0) return null;
 

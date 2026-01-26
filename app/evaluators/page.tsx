@@ -21,6 +21,7 @@ export default function EvaluatorsPage() {
   const [mounted, setMounted] = useState(false);
   const { evaluators, isLoading, error, createEvaluator, updateEvaluator, deleteEvaluator } = useEvaluators();
   const { club } = useMyClub();
+  const apiClient = useApiClient();
   const { subscription } = useMySubscription();
   const isSubscriptionActive = subscription?.status === 'ACTIVE';
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -206,8 +207,8 @@ export default function EvaluatorsPage() {
           </button>
         </div>
 
-        {/* Error Message */}
-        {error && (
+        {/* Error Message - Solo mostrar si no está cargando */}
+        {error && !isLoading && (
           <div className="mb-6 bg-error/20 border border-error/30 text-error-light px-4 py-3 rounded-xl">
             {error}
           </div>

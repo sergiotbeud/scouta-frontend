@@ -1,16 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useEvaluatorClient } from '../hooks/useEvaluatorClient';
 import { useErrorHandler } from '../hooks/useErrorHandler';
+import { useAuthStore } from '../store/auth-store';
 import { User, CreateEvaluatorRequest, UpdateEvaluatorRequest } from '../ports/IApiClient';
 
 export function useEvaluators() {
   const [evaluators, setEvaluators] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasInitialLoadCompleted, setHasInitialLoadCompleted] = useState(false);
+  const token = useAuthStore((state) => state.token);
   const evaluatorClient = useEvaluatorClient();
   const { handleError } = useErrorHandler();
 
   const fetchEvaluators = async (): Promise<void> => {
+    // No hacer la llamada si no hay token disponible
+    if (!token) {
+      setIsLoading(false);
+      setHasInitialLoadCompleted(true);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -19,20 +29,33 @@ export function useEvaluators() {
       if (response.success && response.data) {
         setEvaluators(response.data);
       } else {
-        setError(response.error || 'Error al cargar evaluadores');
+        // Solo establecer error después de la carga inicial
+        if (hasInitialLoadCompleted) {
+          setError(response.error || 'Error al cargar evaluadores');
+        }
       }
     } catch (err: unknown) {
-      const errorMessage = handleError(err, 'Error al cargar evaluadores');
-      setError(errorMessage);
+      // Solo establecer error después de la carga inicial
+      if (hasInitialLoadCompleted) {
+        const errorMessage = handleError(err, 'Error al cargar evaluadores');
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
+      setHasInitialLoadCompleted(true);
     }
   };
 
   useEffect(() => {
-    fetchEvaluators();
+    // Solo hacer la llamada si hay token disponible
+    if (token) {
+      fetchEvaluators();
+    } else {
+      setIsLoading(false);
+      setHasInitialLoadCompleted(true);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token]);
 
   const createEvaluator = async (evaluator: CreateEvaluatorRequest): Promise<User | null> => {
     try {

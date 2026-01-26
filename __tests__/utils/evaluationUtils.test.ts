@@ -97,6 +97,8 @@ describe('evaluationUtils', () => {
       expect(averages.cognitivo).toBeNull();
       expect(averages.psicológico).toBeNull();
       expect(averages.biomédico).toBeNull();
+      expect(averages.vad).toBeNull();
+      expect(averages.vao).toBeNull();
     });
   });
 

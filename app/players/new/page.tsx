@@ -18,6 +18,7 @@ const playerSchema = z.object({
   name: z.string().min(1, 'El nombre es requerido'),
   positions: z.array(z.string()).min(1, 'Debes seleccionar al menos una posición'),
   age: z.number().int().min(0).max(150, 'La edad debe estar entre 0 y 150'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
   height: z.number().positive().optional().nullable(),
   weight: z.number().positive().optional().nullable(),
   phone: z.string().optional().nullable(),
@@ -219,6 +220,7 @@ export default function NewPlayerPage() {
         name: data.name,
         positions: data.positions,
         age: data.age,
+        password: data.password,
         height: data.height,
         weight: data.weight,
         photoUrl,
@@ -446,6 +448,27 @@ export default function NewPlayerPage() {
               {errors.age && (
                 <p className="mt-1 text-sm text-error-light">{errors.age.message}</p>
               )}
+            </div>
+
+            {/* Contraseña */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
+                Contraseña *
+              </label>
+              <input
+                {...register('password')}
+                type="password"
+                id="password"
+                minLength={6}
+                className="w-full px-4 py-3 bg-dark-elevated border border-dark-border rounded-xl text-white placeholder-dark-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                placeholder="Mínimo 6 caracteres"
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-error-light">{errors.password.message}</p>
+              )}
+              <p className="mt-1 text-xs text-dark-text-tertiary">
+                El jugador usará esta contraseña para acceder al sistema
+              </p>
             </div>
 
             {/* Altura */}
