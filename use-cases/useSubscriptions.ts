@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSubscriptionClient } from '../hooks/useSubscriptionClient';
 import { useErrorHandler } from '../hooks/useErrorHandler';
+import { isAxiosError } from '../utils/typeGuards';
 import { Subscription, CreateSubscriptionRequest, UpdateSubscriptionRequest } from '../ports/IApiClient';
 
 export function useSubscription(clubId: string) {
@@ -42,12 +43,13 @@ export function useSubscription(clubId: string) {
           setSubscription(null); // Limpiar suscripción si hay error
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Si es 404, no hay suscripción (no es un error)
-      if (err.response?.status === 404) {
+      if (isAxiosError(err) && err.response?.status === 404) {
         setSubscription(null);
       } else {
-        setError(err.message || 'Error al cargar suscripción');
+        const errorMessage = handleError(err, 'Error al cargar suscripción');
+        setError(errorMessage);
       }
     } finally {
       setIsLoading(false);

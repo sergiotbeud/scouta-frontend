@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSubscriptionClient } from '../hooks/useSubscriptionClient';
 import { useErrorHandler } from '../hooks/useErrorHandler';
+import { isAxiosError } from '../utils/typeGuards';
 import { useAuthStore } from '../store/auth-store';
 import { Subscription } from '../ports/IApiClient';
 import { UserRole } from '../domain/entities/User';
@@ -43,13 +44,10 @@ export function useMySubscription() {
         }
       }
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'response' in err) {
-        const axiosError = err as any;
-        if (axiosError.response?.status === 404) {
-          setSubscription(null);
-          setError(null);
-          return;
-        }
+      if (isAxiosError(err) && err.response?.status === 404) {
+        setSubscription(null);
+        setError(null);
+        return;
       }
       const errorMessage = handleError(err, 'Error al cargar suscripción');
       setError(errorMessage);

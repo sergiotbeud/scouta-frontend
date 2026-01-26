@@ -63,8 +63,9 @@ export function useEvaluationTemplates() {
         setError(response.error || 'Error al actualizar template');
         return null;
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al actualizar template');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al actualizar template');
+      setError(errorMessage);
       return null;
     } finally {
       setIsLoading(false);

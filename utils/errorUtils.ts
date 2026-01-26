@@ -2,6 +2,8 @@
  * Utilidades para el manejo de errores de la API
  */
 
+import { isAxiosError, hasValidationDetails } from './typeGuards';
+
 /**
  * Parsea un error desconocido y retorna un mensaje de error legible
  * 
@@ -21,33 +23,31 @@ export function parseApiError(error: unknown, defaultMessage: string = 'Ha ocurr
   }
 
   // Si es una respuesta de Axios con datos de error
-  if (error && typeof error === 'object' && 'response' in error) {
-    const axiosError = error as any;
-    
+  if (isAxiosError(error)) {
     // Error de validación con detalles
-    if (axiosError.response?.data?.details && Array.isArray(axiosError.response.data.details)) {
-      const validationErrors = axiosError.response.data.details
-        .map((detail: any) => {
+    if (hasValidationDetails(error)) {
+      const validationErrors = error.response.data.details
+        .map((detail) => {
           const path = detail.path?.join('.') || 'campo';
-          return `${path}: ${detail.message}`;
+          return `${path}: ${detail.message || 'Error de validación'}`;
         })
         .join(', ');
       return `Error de validación: ${validationErrors}`;
     }
     
     // Error con mensaje en response.data.error
-    if (axiosError.response?.data?.error) {
-      return axiosError.response.data.error;
+    if (error.response?.data?.error) {
+      return error.response.data.error;
     }
     
     // Error de conexión
-    if (axiosError.request && !axiosError.response) {
+    if (error.request && !error.response) {
       return 'No se pudo conectar con el servidor. Verifica que el backend esté corriendo.';
     }
     
     // Error HTTP con código de estado
-    if (axiosError.response?.status) {
-      const status = axiosError.response.status;
+    if (error.response?.status) {
+      const status = error.response.status;
       if (status === 401) {
         return 'Sesión expirada. Por favor, inicia sesión nuevamente.';
       }
@@ -66,7 +66,7 @@ export function parseApiError(error: unknown, defaultMessage: string = 'Ha ocurr
 
   // Si tiene un mensaje genérico
   if (error && typeof error === 'object' && 'message' in error) {
-    const errorWithMessage = error as { message: string };
+    const errorWithMessage = error as { message: unknown };
     if (typeof errorWithMessage.message === 'string') {
       return errorWithMessage.message;
     }
@@ -83,14 +83,11 @@ export function parseApiError(error: unknown, defaultMessage: string = 'Ha ocurr
  * @returns Array de mensajes de validación o null si no hay detalles
  */
 export function extractValidationErrors(error: unknown): string[] | null {
-  if (error && typeof error === 'object' && 'response' in error) {
-    const axiosError = error as any;
-    if (axiosError.response?.data?.details && Array.isArray(axiosError.response.data.details)) {
-      return axiosError.response.data.details.map((detail: any) => {
-        const path = detail.path?.join('.') || 'campo';
-        return `${path}: ${detail.message}`;
-      });
-    }
+  if (hasValidationDetails(error)) {
+    return error.response.data.details.map((detail) => {
+      const path = detail.path?.join('.') || 'campo';
+      return `${path}: ${detail.message || 'Error de validación'}`;
+    });
   }
   return null;
 }
@@ -116,9 +113,8 @@ export function isConnectionError(error: unknown): boolean {
  * @returns true si es un error 401
  */
 export function isAuthError(error: unknown): boolean {
-  if (error && typeof error === 'object' && 'response' in error) {
-    const axiosError = error as any;
-    return axiosError.response?.status === 401;
+  if (isAxiosError(error)) {
+    return error.response?.status === 401;
   }
   return false;
 }

@@ -12,17 +12,20 @@ export function useEvaluations() {
   const { handleError } = useErrorHandler();
 
   // Función helper para normalizar items que pueden venir con estructura {props: {...}}
-  const normalizeEvaluationItems = (items: any[] | undefined): any[] => {
+  const normalizeEvaluationItems = (items: unknown[] | undefined): unknown[] => {
     if (!items || !Array.isArray(items)) {
       return [];
     }
     return items.map(item => {
       // Si el item tiene una propiedad 'props', extraer las propiedades de ahí
-      if (item && typeof item === 'object' && 'props' in item && item.props) {
-        return {
-          ...item.props,
-          createdAt: item.createdAt || item.props.createdAt,
-        };
+      if (item && typeof item === 'object' && 'props' in item) {
+        const itemWithProps = item as { props?: unknown; createdAt?: string };
+        if (itemWithProps.props && typeof itemWithProps.props === 'object') {
+          return {
+            ...(itemWithProps.props as Record<string, unknown>),
+            createdAt: itemWithProps.createdAt || (itemWithProps.props as Record<string, unknown>).createdAt,
+          };
+        }
       }
       // Si ya está normalizado, devolverlo tal cual
       return item;
@@ -70,8 +73,9 @@ export function useEvaluations() {
         setError(response.error || 'Error al cargar evaluaciones');
         return [];
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar evaluaciones');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al cargar evaluaciones');
+      setError(errorMessage);
       return [];
     } finally {
       setIsLoading(false);

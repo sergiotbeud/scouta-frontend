@@ -33,10 +33,11 @@ export function calculateCategoryAverage(evaluation: Evaluation, category: Evalu
     }
     
     if (typeof value === 'object' && value !== null) {
-      if ('value' in value && typeof (value as any).value === 'number') {
-        value = (value as any).value;
-      } else if ('number' in value && typeof (value as any).number === 'number') {
-        value = (value as any).number;
+      const numericObj = value as { value?: unknown; number?: unknown };
+      if ('value' in numericObj && typeof numericObj.value === 'number') {
+        value = numericObj.value;
+      } else if ('number' in numericObj && typeof numericObj.number === 'number') {
+        value = numericObj.number;
       } else {
         const numValue = Number(value);
         if (!isNaN(numValue) && numValue !== 0) {

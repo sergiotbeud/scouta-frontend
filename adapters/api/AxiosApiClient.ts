@@ -41,15 +41,72 @@ import { IReportClient } from '../../ports/IReportClient';
 import { IEvaluatorClient } from '../../ports/IEvaluatorClient';
 import { IAdminClient } from '../../ports/IAdminClient';
 import { IAuthStore } from '../../ports/IAuthStore';
+import { isAxiosError } from '../../utils/typeGuards';
 import { Player } from '../../domain/entities/Player';
 import { Evaluation } from '../../domain/entities/Evaluation';
 import { EvaluationTemplate, CreateEvaluationTemplateRequest, UpdateEvaluationTemplateRequest } from '../../domain/entities/EvaluationTemplate';
 import { User } from '../../ports/IApiClient';
+import { safeValidateApiResponse } from '../../schemas/apiResponses';
+import {
+  ApiResponsePlayerSchema,
+  ApiResponsePlayersSchema,
+  ApiResponseUserSchema,
+  ApiResponseUsersSchema,
+  ApiResponseEvaluationSchema,
+  ApiResponseEvaluationsSchema,
+  ApiResponseClubSchema,
+  ApiResponseClubsSchema,
+  ApiResponseSubscriptionSchema,
+  ApiResponseUploadPhotoSchema,
+  ApiResponseDashboardStatsSchema,
+  ApiResponsePlayerStatsSchema,
+  ApiResponseSharedReportSchema,
+  ApiResponsePlayerWithoutPasswordSchema,
+  ApiResponseGeneratePasswordSchema,
+  LoginResponseSchema,
+  ChangePasswordResponseSchema,
+  ChangeEmailResponseSchema,
+} from '../../schemas/apiResponses';
 
 @injectable()
 export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, IEvaluationClient, IClubClient, ISubscriptionClient, IReportClient, IEvaluatorClient, IAdminClient {
   private client: AxiosInstance;
   private token: string | null = null;
+
+  /**
+   * Helper para manejar errores de Axios y retornar la respuesta del error si existe
+   */
+  private handleAxiosError<T>(error: unknown, methodName?: string): ApiResponse<T> {
+    if (isAxiosError(error)) {
+      // Log en desarrollo
+      if (process.env.NODE_ENV === 'development' && methodName) {
+        console.error(`❌ Error en ${methodName}:`, {
+          message: error.message,
+          hasResponse: !!error.response,
+          hasRequest: !!error.request,
+          responseData: error.response?.data,
+          baseURL: this.client.defaults.baseURL,
+        });
+      }
+
+      // Si hay respuesta del servidor, retornarla
+      if (error.response?.data) {
+        return error.response.data as ApiResponse<T>;
+      }
+
+      // Si hay request pero no response, es error de conexión
+      if (error.request && !error.response) {
+        throw new Error(`No se pudo conectar con el servidor en ${this.client.defaults.baseURL}. Verifica que el backend esté corriendo.`);
+      }
+    }
+
+    // Si es un Error estándar, crear respuesta de error
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
 
   constructor(baseURL: string) {
     this.client = axios.create({
@@ -93,25 +150,21 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
         '/api/auth/login',
         credentials
       );
-      return response.data;
-    } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Error en login:', {
-          message: error.message,
-          hasResponse: !!error.response,
-          hasRequest: !!error.request,
-          responseData: error.response?.data,
-          baseURL: this.client.defaults.baseURL,
-        });
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, LoginResponseSchema);
+      if (validated) {
+        return validated;
       }
-
-      if (error.response) {
-        return error.response.data;
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de login no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
       }
-      if (error.request) {
-        throw new Error(`No se pudo conectar con el servidor en ${this.client.defaults.baseURL}. Verifica que el backend esté corriendo.`);
-      }
-      throw new Error(error.message || 'Error desconocido');
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<LoginResponse['data']>(error, 'login');
     }
   }
 
@@ -121,23 +174,21 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
         '/api/auth/change-password',
         request
       );
-      return response.data;
-    } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Error en changePassword:', {
-          message: error.message,
-          hasResponse: !!error.response,
-          responseData: error.response?.data,
-        });
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ChangePasswordResponseSchema);
+      if (validated) {
+        return validated;
       }
-
-      if (error.response) {
-        return error.response.data;
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de changePassword no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
       }
-      if (error.request) {
-        throw new Error(`No se pudo conectar con el servidor. Verifica que el backend esté corriendo.`);
-      }
-      throw new Error(error.message || 'Error desconocido');
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<ChangePasswordResponse['data']>(error, 'changePassword');
     }
   }
 
@@ -147,23 +198,21 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
         '/api/auth/change-email',
         request
       );
-      return response.data;
-    } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Error en changeEmail:', {
-          message: error.message,
-          hasResponse: !!error.response,
-          responseData: error.response?.data,
-        });
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ChangeEmailResponseSchema);
+      if (validated) {
+        return validated;
       }
-
-      if (error.response) {
-        return error.response.data;
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de changeEmail no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
       }
-      if (error.request) {
-        throw new Error(`No se pudo conectar con el servidor. Verifica que el backend esté corriendo.`);
-      }
-      throw new Error(error.message || 'Error desconocido');
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<ChangeEmailResponse['data']>(error, 'changeEmail');
     }
   }
 
@@ -205,24 +254,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       
       const response = await this.client.get<ApiResponse<Player[]>>(url);
       return response.data;
-    } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Error en getPlayers:', {
-          message: error.message,
-          hasResponse: !!error.response,
-          hasRequest: !!error.request,
-          responseData: error.response?.data,
-          status: error.response?.status,
-          baseURL: this.client.defaults.baseURL,
-        });
-      }
-      if (error.response) {
-        return error.response.data;
-      }
-      if (error.request) {
-        throw new Error(`No se pudo conectar con el servidor. Verifica que el backend esté corriendo en ${this.client.defaults.baseURL}`);
-      }
-      throw new Error(error.message || 'Error al obtener jugadores');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Player[]>(error, 'getPlayers');
     }
   }
 
@@ -231,23 +264,29 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       const params = includeDeleted ? '?includeDeleted=true' : '';
       const response = await this.client.get<ApiResponse<Player>>(`/api/players/${id}${params}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al obtener jugador');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Player>(error, 'getPlayerById');
     }
   }
 
   async createPlayer(player: CreatePlayerRequest): Promise<ApiResponse<Player>> {
     try {
       const response = await this.client.post<ApiResponse<Player>>('/api/players', player);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponsePlayerSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al crear jugador');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de createPlayer no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Player>(error, 'createPlayer');
     }
   }
 
@@ -255,11 +294,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.put<ApiResponse<Player>>(`/api/players/${id}`, player);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al actualizar jugador');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Player>(error, 'updatePlayer');
     }
   }
 
@@ -267,23 +303,29 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.delete<ApiResponse<void>>(`/api/players/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al eliminar jugador');
+    } catch (error: unknown) {
+      return this.handleAxiosError<void>(error, 'deletePlayer');
     }
   }
 
   async getDeletedPlayers(): Promise<ApiResponse<Player[]>> {
     try {
       const response = await this.client.get<ApiResponse<Player[]>>('/api/players/deleted');
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponsePlayersSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener jugadores eliminados');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getDeletedPlayers no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Player[]>(error, 'getDeletedPlayers');
     }
   }
 
@@ -291,11 +333,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.post<ApiResponse<void>>(`/api/players/${id}/restore`);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al restaurar jugador');
+    } catch (error: unknown) {
+      return this.handleAxiosError<void>(error, 'restorePlayer');
     }
   }
 
@@ -314,12 +353,21 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
           timeout: 60000, // 60 segundos para conversión HEIC
         }
       );
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseUploadPhotoSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al subir foto');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de uploadPlayerPhoto no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<UploadPhotoResponse>(error, 'uploadPlayerPhoto');
     }
   }
 
@@ -338,12 +386,21 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
           timeout: 60000, // 60 segundos para conversión HEIC
         }
       );
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseUploadPhotoSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al subir logo');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de uploadClubLogo no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<UploadPhotoResponse>(error, 'uploadClubLogo');
     }
   }
 
@@ -362,24 +419,42 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
           timeout: 60000, // 60 segundos para conversión HEIC
         }
       );
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseUploadPhotoSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al subir la foto del usuario');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de uploadUserPhoto no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<UploadPhotoResponse>(error, 'uploadUserPhoto');
     }
   }
 
   async createEvaluation(evaluation: CreateEvaluationRequest): Promise<ApiResponse<Evaluation>> {
     try {
       const response = await this.client.post<ApiResponse<Evaluation>>('/api/evaluations', evaluation);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseEvaluationSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al crear evaluación');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de createEvaluation no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Evaluation>(error, 'createEvaluation');
     }
   }
 
@@ -416,23 +491,29 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       
       const response = await this.client.get<ApiResponse<Evaluation[]>>(url);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al obtener evaluaciones');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Evaluation[]>(error, 'getEvaluations');
     }
   }
 
   async getEvaluationById(id: string): Promise<ApiResponse<Evaluation>> {
     try {
       const response = await this.client.get<ApiResponse<Evaluation>>(`/api/evaluations/${id}`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseEvaluationSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener evaluación');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getEvaluationById no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Evaluation>(error, 'getEvaluationById');
     }
   }
 
@@ -464,12 +545,21 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       const url = `/api/evaluations/player/${playerId}${queryString ? `?${queryString}` : ''}`;
       
       const response = await this.client.get<ApiResponse<Evaluation[]>>(url);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseEvaluationsSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener evaluaciones del jugador');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getPlayerEvaluations no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Evaluation[]>(error, 'getPlayerEvaluations');
     }
   }
 
@@ -477,11 +567,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.put<ApiResponse<Evaluation>>(`/api/evaluations/${id}`, evaluation);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al actualizar evaluación');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Evaluation>(error, 'updateEvaluation');
     }
   }
 
@@ -489,11 +576,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.delete<ApiResponse<void>>(`/api/evaluations/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al eliminar evaluación');
+    } catch (error: unknown) {
+      return this.handleAxiosError<void>(error, 'deleteEvaluation');
     }
   }
 
@@ -502,11 +586,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.post<ApiResponse<EvaluationTemplate>>('/api/evaluation-templates', template);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al crear template');
+    } catch (error: unknown) {
+      return this.handleAxiosError<EvaluationTemplate>(error, 'createEvaluationTemplate');
     }
   }
 
@@ -519,20 +600,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       
       const response = await this.client.get<ApiResponse<EvaluationTemplate[]>>(url);
       return response.data;
-    } catch (error: any) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('❌ Error en getEvaluationTemplates:', {
-          message: error.message,
-          status: error.response?.status,
-          responseData: error.response?.data,
-          hasToken: !!this.token,
-          headers: error.config?.headers,
-        });
-      }
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al obtener templates');
+    } catch (error: unknown) {
+      return this.handleAxiosError<EvaluationTemplate[]>(error, 'getEvaluationTemplates');
     }
   }
 
@@ -540,11 +609,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.get<ApiResponse<EvaluationTemplate>>(`/api/evaluation-templates/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al obtener template');
+    } catch (error: unknown) {
+      return this.handleAxiosError<EvaluationTemplate>(error, 'getEvaluationTemplateById');
     }
   }
 
@@ -552,11 +618,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.put<ApiResponse<EvaluationTemplate>>(`/api/evaluation-templates/${id}`, template);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al actualizar template');
+    } catch (error: unknown) {
+      return this.handleAxiosError<EvaluationTemplate>(error, 'updateEvaluationTemplate');
     }
   }
 
@@ -564,23 +627,30 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.delete<ApiResponse<void>>(`/api/evaluation-templates/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al eliminar template');
+    } catch (error: unknown) {
+      return this.handleAxiosError<void>(error, 'deleteEvaluationTemplate');
     }
   }
 
   async getDashboardStats(): Promise<ApiResponse<DashboardStats | PlayerStats>> {
     try {
       const response = await this.client.get<ApiResponse<DashboardStats | PlayerStats>>('/api/dashboard/stats');
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod (puede ser DashboardStats o PlayerStats)
+      const validatedDashboard = safeValidateApiResponse(response.data, ApiResponseDashboardStatsSchema);
+      const validatedPlayer = safeValidateApiResponse(response.data, ApiResponsePlayerStatsSchema);
+      if (validatedDashboard || validatedPlayer) {
+        return validatedDashboard || validatedPlayer || response.data;
       }
-      throw new Error(error.message || 'Error al obtener estadísticas del dashboard');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getDashboardStats no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<DashboardStats | PlayerStats>(error, 'getDashboardStats');
     }
   }
 
@@ -588,24 +658,42 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
   async getClubs(): Promise<ApiResponse<Club[]>> {
     try {
       const response = await this.client.get<ApiResponse<Club[]>>('/api/clubs');
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseClubsSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener clubes');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getClubs no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Club[]>(error, 'getClubs');
     }
   }
 
   async getClubById(id: string): Promise<ApiResponse<Club>> {
     try {
       const response = await this.client.get<ApiResponse<Club>>(`/api/clubs/${id}`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseClubSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener club');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getClubById no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Club>(error, 'getClubById');
     }
   }
 
@@ -626,11 +714,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
         success: false,
         error: 'Error al crear club',
       };
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al crear club');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Club>(error, 'createClub');
     }
   }
 
@@ -638,21 +723,21 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.put<ApiResponse<Club>>(`/api/clubs/${id}`, club);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response?.data) {
+        const errorData = error.response.data as ApiResponse<Club> & { details?: unknown };
         // Si hay detalles de validación, mostrarlos en el error
-        const errorData = error.response.data;
         if (errorData.details) {
           console.error('Validation details:', errorData.details);
           return {
             success: false,
-            error: errorData.message || errorData.error || 'Error de validación',
+            error: (errorData as { message?: string; error?: string }).message || errorData.error || 'Error de validación',
             details: errorData.details,
           };
         }
-        return errorData;
+        return errorData as ApiResponse<Club>;
       }
-      throw new Error(error.message || 'Error al actualizar club');
+      return this.handleAxiosError<Club>(error, 'updateClub');
     }
   }
 
@@ -662,23 +747,29 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
         `/api/clubs/${id}${hardDelete ? '?hardDelete=true' : ''}`
       );
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al eliminar club');
+    } catch (error: unknown) {
+      return this.handleAxiosError<void>(error, 'deleteClub');
     }
   }
 
   async getMyClubs(): Promise<ApiResponse<Club[]>> {
     try {
       const response = await this.client.get<ApiResponse<Club[]>>('/api/clubs/me/clubs');
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseClubsSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener mis clubes');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getMyClubs no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Club[]>(error, 'getMyClubs');
     }
   }
 
@@ -686,12 +777,21 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
   async getSubscriptionByClubId(clubId: string): Promise<ApiResponse<Subscription>> {
     try {
       const response = await this.client.get<ApiResponse<Subscription>>(`/api/clubs/${clubId}/subscription`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseSubscriptionSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener suscripción');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getSubscriptionByClubId no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Subscription>(error, 'getSubscriptionByClubId');
     }
   }
 
@@ -699,35 +799,50 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.get<ApiResponse<Subscription>>('/api/clubs/me/subscription');
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al obtener mi suscripción');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Subscription>(error, 'getMySubscription');
     }
   }
 
   async createSubscription(clubId: string, subscription: CreateSubscriptionRequest): Promise<ApiResponse<Subscription>> {
     try {
       const response = await this.client.post<ApiResponse<Subscription>>(`/api/clubs/${clubId}/subscription`, subscription);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseSubscriptionSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al crear suscripción');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de createSubscription no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Subscription>(error, 'createSubscription');
     }
   }
 
   async updateSubscription(clubId: string, subscription: UpdateSubscriptionRequest): Promise<ApiResponse<Subscription>> {
     try {
       const response = await this.client.put<ApiResponse<Subscription>>(`/api/clubs/${clubId}/subscription`, subscription);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseSubscriptionSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al actualizar suscripción');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de updateSubscription no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<Subscription>(error, 'updateSubscription');
     }
   }
 
@@ -735,48 +850,84 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
   async getEvaluators(): Promise<ApiResponse<User[]>> {
     try {
       const response = await this.client.get<ApiResponse<User[]>>('/api/users/evaluators');
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseUsersSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener evaluadores');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getEvaluators no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<User[]>(error, 'getEvaluators');
     }
   }
 
   async getEvaluatorById(id: string): Promise<ApiResponse<User>> {
     try {
       const response = await this.client.get<ApiResponse<User>>(`/api/users/evaluators/${id}`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseUserSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener evaluador');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getEvaluatorById no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<User>(error, 'getEvaluatorById');
     }
   }
 
   async createEvaluator(evaluator: CreateEvaluatorRequest): Promise<ApiResponse<User>> {
     try {
       const response = await this.client.post<ApiResponse<User>>('/api/users/evaluators', evaluator);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseUserSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al crear evaluador');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de createEvaluator no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<User>(error, 'createEvaluator');
     }
   }
 
   async updateEvaluator(id: string, evaluator: UpdateEvaluatorRequest): Promise<ApiResponse<User>> {
     try {
       const response = await this.client.put<ApiResponse<User>>(`/api/users/evaluators/${id}`, evaluator);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseUserSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al actualizar evaluador');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de updateEvaluator no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<User>(error, 'updateEvaluator');
     }
   }
 
@@ -784,11 +935,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
     try {
       const response = await this.client.delete<ApiResponse<void>>(`/api/users/evaluators/${id}`);
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al eliminar evaluador');
+    } catch (error: unknown) {
+      return this.handleAxiosError<void>(error, 'deleteEvaluator');
     }
   }
 
@@ -834,11 +982,13 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       }
       
       return { blob: response.data, filename };
-    } catch (error: any) {
-      if (error.response) {
-        throw new Error(error.response.data?.error || 'Error al generar PDF');
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response?.data) {
+        const errorData = error.response.data as { error?: string };
+        throw new Error(errorData.error || 'Error al generar PDF');
       }
-      throw new Error(error.message || 'Error al generar PDF');
+      const errorMessage = error instanceof Error ? error.message : 'Error al generar PDF';
+      throw new Error(errorMessage);
     }
   }
 
@@ -848,12 +998,21 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
         `/api/reports/evaluations/${evaluationId}/share`,
         options || {}
       );
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseSharedReportSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al crear link compartido');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de createSharedReport no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<SharedReport>(error, 'createSharedReport');
     }
   }
 
@@ -863,11 +1022,8 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
         `/api/reports/shared/${token}`
       );
       return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
-      }
-      throw new Error(error.message || 'Error al obtener reporte compartido');
+    } catch (error: unknown) {
+      return this.handleAxiosError<{ evaluation: Evaluation; player?: Player | null; evaluator?: User | null; club?: Club | null; sharedReport: SharedReportInfo }>(error, 'getSharedReport');
     }
   }
 
@@ -912,11 +1068,13 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
       }
       
       return { blob: response.data, filename };
-    } catch (error: any) {
-      if (error.response) {
-        throw new Error(error.response.data?.error || 'Error al generar PDF');
+    } catch (error: unknown) {
+      if (isAxiosError(error) && error.response?.data) {
+        const errorData = error.response.data as { error?: string };
+        throw new Error(errorData.error || 'Error al generar PDF');
       }
-      throw new Error(error.message || 'Error al generar PDF');
+      const errorMessage = error instanceof Error ? error.message : 'Error al generar PDF';
+      throw new Error(errorMessage);
     }
   }
 
@@ -924,24 +1082,42 @@ export class AxiosApiClient implements IApiClient, IAuthClient, IPlayerClient, I
   async getPlayersWithoutPassword(): Promise<ApiResponse<PlayerWithoutPassword[]>> {
     try {
       const response = await this.client.get<ApiResponse<PlayerWithoutPassword[]>>('/api/admin/players-without-password');
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponsePlayerWithoutPasswordSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al obtener jugadores sin contraseña');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de getPlayersWithoutPassword no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<PlayerWithoutPassword[]>(error, 'getPlayersWithoutPassword');
     }
   }
 
   async generatePlayerPassword(playerId: string): Promise<ApiResponse<GeneratePasswordResponse>> {
     try {
       const response = await this.client.post<ApiResponse<GeneratePasswordResponse>>(`/api/admin/generate-player-password/${playerId}`);
-      return response.data;
-    } catch (error: any) {
-      if (error.response) {
-        return error.response.data;
+      // Validar respuesta con Zod
+      const validated = safeValidateApiResponse(response.data, ApiResponseGeneratePasswordSchema);
+      if (validated) {
+        return validated;
       }
-      throw new Error(error.message || 'Error al generar contraseña');
+      // Si la validación falla pero hay datos, retornarlos con advertencia
+      if (response.data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('⚠️ Respuesta de generatePlayerPassword no validada completamente, pero se retorna:', response.data);
+        }
+        return response.data;
+      }
+      throw new Error('Respuesta inválida del servidor');
+    } catch (error: unknown) {
+      return this.handleAxiosError<GeneratePasswordResponse>(error, 'generatePlayerPassword');
     }
   }
 }

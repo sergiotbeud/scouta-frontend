@@ -21,8 +21,9 @@ export function useEvaluators() {
       } else {
         setError(response.error || 'Error al cargar evaluadores');
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar evaluadores');
+    } catch (err: unknown) {
+      const errorMessage = handleError(err, 'Error al cargar evaluadores');
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
