@@ -140,6 +140,7 @@ export interface CreateEvaluationRequest {
   }>;
   strengths?: string[];
   weaknesses?: string[];
+  videoUrl?: string | null;
 }
 
 export interface UpdateEvaluationRequest {
@@ -155,6 +156,7 @@ export interface UpdateEvaluationRequest {
   }>;
   strengths?: string[];
   weaknesses?: string[];
+  videoUrl?: string | null;
 }
 
 export interface GetEvaluationsFilters {

@@ -11,6 +11,7 @@ import { SharedReportInfo, Club } from '../../../ports/IApiClient';
 import { useReports } from '../../../use-cases/useReports';
 import { getCategoryAverages, prepareRadarChartData } from '../../../utils/evaluationUtils';
 import { getImageUrl } from '../../../utils/imageUtils';
+import { getYoutubeEmbedUrl } from '../../../utils/youtubeUtils';
 
 // Importación dinámica para evitar problemas de SSR con recharts
 const EvaluationRadarChart = dynamic(
@@ -282,6 +283,22 @@ export default function SharedReportPage() {
             )}
           </div>
         </div>
+
+        {/* Video de la evaluación (YouTube) - solo si existe URL */}
+        {evaluation?.videoUrl && getYoutubeEmbedUrl(evaluation.videoUrl) && (
+          <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">Video de la evaluación</h2>
+            <div className="aspect-video rounded-xl overflow-hidden bg-dark-elevated border border-dark-border">
+              <iframe
+                src={getYoutubeEmbedUrl(evaluation.videoUrl)}
+                title="Video de evaluación"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Gráfico Radar */}
         {radarData && radarData.length > 0 && (

@@ -23,6 +23,7 @@ export interface Evaluation {
   generalScore?: number | null;
   strengths?: string[];
   weaknesses?: string[];
+  videoUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   items?: EvaluationItem[];

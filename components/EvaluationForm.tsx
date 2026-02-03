@@ -16,6 +16,7 @@ const evaluationSchema = z.object({
   observations: z.string().optional().nullable(),
   strengths: z.string().optional().nullable(),
   weaknesses: z.string().optional().nullable(),
+  videoUrl: z.string().optional().nullable(),
   items: z.array(z.object({
     category: z.string(),
     itemName: z.string(),
@@ -30,6 +31,7 @@ type EvaluationFormData = z.infer<typeof evaluationSchema>;
 type EvaluationSubmitData = Omit<EvaluationFormData, 'strengths' | 'weaknesses'> & {
   strengths?: string[];
   weaknesses?: string[];
+  videoUrl?: string | null;
 };
 
 interface EvaluationFormProps {
@@ -287,6 +289,7 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
     defaultValues: {
       playerId: playerId || '',
       observations: '',
+      videoUrl: '',
       items: [],
     },
   });
@@ -303,6 +306,7 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
     if (initialData) {
       setValue('playerId', initialData.playerId);
       setValue('observations', initialData.observations || '');
+      setValue('videoUrl', initialData.videoUrl || '');
       // Cargar strengths y weaknesses como strings (unión de líneas)
       setValue('strengths', initialData.strengths?.join('\n') || '');
       setValue('weaknesses', initialData.weaknesses?.join('\n') || '');
@@ -610,6 +614,7 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
       items: allItems,
       strengths: strengthsArray,
       weaknesses: weaknessesArray,
+      videoUrl: data.videoUrl?.trim() || null,
     });
   };
 
@@ -857,6 +862,22 @@ export function EvaluationForm({ playerId, playerPositions = [], onSubmit, isLoa
           className="w-full px-4 py-3 bg-dark-elevated border border-dark-border rounded-xl text-white placeholder-dark-text-tertiary focus:outline-none focus:ring-2 focus:ring-success/50 focus:border-success/50 transition-all resize-none"
           placeholder="Agrega observaciones generales sobre la evaluación..."
         />
+      </div>
+
+      {/* Video (YouTube) - opcional */}
+      <div>
+        <label className="block text-sm font-medium text-white mb-2">
+          Video de la evaluación (YouTube)
+        </label>
+        <input
+          type="url"
+          {...register('videoUrl')}
+          className="w-full px-4 py-3 bg-dark-elevated border border-dark-border rounded-xl text-white placeholder-dark-text-tertiary focus:outline-none focus:ring-2 focus:ring-success/50 focus:border-success/50 transition-all"
+          placeholder="https://www.youtube.com/watch?v=... o https://youtu.be/..."
+        />
+        <p className="mt-2 text-xs text-dark-text-tertiary">
+          Opcional. Pega el enlace de un video de YouTube.
+        </p>
       </div>
 
       {/* Fortalezas y Debilidades */}

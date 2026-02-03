@@ -48,7 +48,7 @@ function NewEvaluationPageContent() {
     }
   }, [searchParams]);
 
-  const handleSubmit = async (data: { playerId: string; observations?: string | null; items: any[]; strengths?: string[]; weaknesses?: string[] }) => {
+  const handleSubmit = async (data: { playerId: string; observations?: string | null; items: any[]; strengths?: string[]; weaknesses?: string[]; videoUrl?: string | null }) => {
     if (!user) return;
 
     const result = await createEvaluation({
@@ -58,6 +58,7 @@ function NewEvaluationPageContent() {
       items: data.items,
       strengths: data.strengths || [],
       weaknesses: data.weaknesses || [],
+      videoUrl: data.videoUrl ?? null,
     });
 
     if (result) {

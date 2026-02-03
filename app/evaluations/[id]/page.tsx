@@ -16,6 +16,7 @@ import { Player } from '../../../domain/entities/Player';
 import { UserRole } from '../../../domain/entities/User';
 import { useApiClient } from '../../../hooks/useApiClient';
 import { getImageUrl } from '../../../utils/imageUtils';
+import { getYoutubeEmbedUrl } from '../../../utils/youtubeUtils';
 
 export default function EvaluationDetailPage() {
   const user = useAuthStore((state) => state.user);
@@ -369,6 +370,22 @@ export default function EvaluationDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Video de la evaluación (YouTube) - solo si existe URL */}
+        {evaluation?.videoUrl && getYoutubeEmbedUrl(evaluation.videoUrl) && (
+          <div className="bg-dark-surface/80 backdrop-blur-xl border border-dark-border/50 rounded-3xl p-6 shadow-2xl mb-6">
+            <h2 className="text-xl font-bold text-white mb-4">Video de la evaluación</h2>
+            <div className="aspect-video rounded-xl overflow-hidden bg-dark-elevated border border-dark-border">
+              <iframe
+                src={getYoutubeEmbedUrl(evaluation.videoUrl)}
+                title="Video de evaluación"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Gráfico Radar */}
         {evaluation && (

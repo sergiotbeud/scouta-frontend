@@ -49,7 +49,7 @@ function EditEvaluationPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, isAuthenticated, evaluationId]);
 
-  const handleSubmit = async (data: { playerId: string; observations?: string | null; items: any[]; strengths?: string[]; weaknesses?: string[] }) => {
+  const handleSubmit = async (data: { playerId: string; observations?: string | null; items: any[]; strengths?: string[]; weaknesses?: string[]; videoUrl?: string | null }) => {
     if (!user || !evaluation) return;
 
     const result = await updateEvaluation(evaluationId, {
@@ -57,6 +57,7 @@ function EditEvaluationPageContent() {
       items: data.items,
       strengths: data.strengths || [],
       weaknesses: data.weaknesses || [],
+      videoUrl: data.videoUrl ?? null,
     });
 
     if (result) {

@@ -64,6 +64,7 @@ export const EvaluationSchema = z.object({
   generalScore: z.number().nullable().optional(),
   strengths: z.array(z.string()).optional(),
   weaknesses: z.array(z.string()).optional(),
+  videoUrl: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   items: z.array(EvaluationItemSchema).optional(),
